@@ -137,6 +137,46 @@ class OrderController extends Controller
                 ->with('success', 'این پرداخت قبلاً ثبت شده است.');
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | تأیید توکن، قبل از هر تغییری روی سفارش
+        |--------------------------------------------------------------------------
+        |
+        | این آدرس بدون نیاز به ورود در دسترس است و از CSRF هم معاف است
+        | (چون درگاه با POST برمی‌گردد و نشست کاربر ممکن است از بین رفته
+        | باشد). پس تنها چیزی که ثابت می‌کند این درخواست واقعاً از درگاه
+        | برای همین سفارش آمده، مطابقت Token با payment_transaction_id
+        | ذخیره‌شده است.
+        |
+        | ترتیب این بررسی اهمیت دارد: قبلاً بررسی توکن بعد از شاخه‌ی
+        | «Status != 2» بود، و آن شاخه سفارش را لغو می‌کرد. یعنی هرکسی
+        | بدون ورود و فقط با حدس‌زدن شناسه‌ی سفارش (که عددی ترتیبی است)
+        | می‌توانست با یک درخواست ساده به
+        |     /payments/sep/order?order=<id>&Status=1
+        | سفارشِ در انتظار پرداختِ هر کاربر دیگری را لغو کند.
+        |
+        | حالا تا وقتی توکن تأیید نشود، هیچ فیلدی از سفارش تغییر
+        | نمی‌کند - نه لغو می‌شود و نه پرداخت‌شده. درخواست ناشناس فقط
+        | لاگ می‌شود و به خانه برمی‌گردد.
+        |
+        */
+        $token = trim((string) $request->input('Token'));
+        $transactionId = trim((string) $order->payment_transaction_id);
+
+        if ($token === '' || $transactionId === '' || $transactionId !== $token) {
+
+            Log::warning('SEP order callback token mismatch', [
+                'order_id' => $order->id,
+                'stored_transaction_id' => $order->payment_transaction_id,
+                'callback_token' => $token,
+                'ip' => $request->ip(),
+            ]);
+
+            return redirect()
+                ->route('home')
+                ->with('error', 'اطلاعات تراکنش نامعتبر است.');
+        }
+
         if ((int) $request->input('Status') !== 2) {
             $order->update(['status' => 'cancelled']);
             $order->items()->update(['status' => 'cancelled']);
@@ -144,18 +184,6 @@ class OrderController extends Controller
             return redirect()
                 ->route('orders.show', $order)
                 ->with('error', 'پرداخت لغو شد یا با موفقیت انجام نشد.');
-        }
-
-        $token = trim((string) $request->input('Token'));
-        $transactionId = trim((string) $order->payment_transaction_id);
-
-        if ($token === '' || $transactionId === '' || $transactionId !== $token) {
-            $order->update(['status' => 'cancelled']);
-            $order->items()->update(['status' => 'cancelled']);
-
-            return redirect()
-                ->route('orders.show', $order)
-                ->with('error', 'اطلاعات تراکنش با سفارش مطابقت ندارد.');
         }
 
         try {
