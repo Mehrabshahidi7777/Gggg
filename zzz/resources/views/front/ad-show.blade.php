@@ -47,8 +47,11 @@
                 {{ $ad->price_formatted }}
             </div>
 
-            @if($ad->reviews->count())
-                <div style="margin-top:10px;color:var(--color-orange);font-weight:800;">★★★★★ {{ number_format($ad->reviews->avg('rating'),1) }} از {{ $ad->reviews->count() }} نظر</div>
+            @if($ad->rating_count)
+                <div style="margin-top:10px;color:var(--color-orange);font-weight:800;">
+                    {{ str_repeat('★', (int) round($ad->rating_average)) }}{{ str_repeat('☆', 5 - (int) round($ad->rating_average)) }}
+                    {{ number_format($ad->rating_average, 1) }} از {{ $ad->rating_count }} امتیاز
+                </div>
             @endif
 
             <div class="detail-tags">
@@ -66,7 +69,13 @@
                 <div class="spec-row"><span>بازدید</span><span>{{ $ad->views_count }}</span></div>
             </div>
 
-            @if($ad->type === 'product')
+            {{--
+                خرید آنلاین برداشته شده و آگهی محصول دقیقاً مثل آگهی
+                خدمت کار می‌کند: کاربر با ارائه‌دهنده تماس می‌گیرد.
+                اگر روزی config('marketplace.online_checkout') روشن شود،
+                دکمه‌ی سبد خرید دوباره برمی‌گردد.
+            --}}
+            @if($ad->type === 'product' && config('marketplace.online_checkout'))
                 <form method="POST" action="{{ route('cart.add', $ad) }}" style="display:flex;gap:12px;align-items:center;margin-top:28px;">
                     @csrf
                     <input type="number" name="quantity" value="1" min="1" max="99" style="width:90px;padding:12px 14px;border:1.5px solid var(--color-line);border-radius:var(--radius-sm);">
@@ -76,6 +85,12 @@
                     برای خرید، بعد از افزودن به سبد خرید شماره تماس و آدرس تحویل را وارد می‌کنید.
                 </p>
             @endif
+
+            {{-- امتیازدهی ۵ ستاره‌ای --}}
+            <div style="margin-top:32px;">
+                <h2 style="font-size:1.05rem;margin-bottom:12px;">به این آگهی امتیاز بدهید</h2>
+                <x-star-rating :ad="$ad" size="full"/>
+            </div>
 
         </div>
 
@@ -90,9 +105,49 @@
                 <div><a href="{{ route('seller.profile',$ad->user) }}" style="font-weight:800;color:var(--color-blueprint);">{{ $ad->user->username ?: $ad->user->name }}</a><div style="font-size:.8rem;color:var(--color-steel-light);margin-top:4px;">برای اطلاعات بیشتر روی نام ارائه‌دهنده بزنید</div></div>
             </div>
 
-            @if($ad->type === 'service' && $ad->phone)
-                <a class="btn btn-navy btn-block" style="margin-bottom:10px;" href="tel:{{ $ad->phone }}">
-                    تماس: {{ $ad->phone }}
+            {{--
+                اطلاعات تماس برای هر دو نوع آگهی (محصول و خدمت) و برای
+                همه‌ی بازدیدکننده‌ها نمایش داده می‌شود. قبلاً فقط خدمت
+                شماره تلفن را نشان می‌داد و آدرس اصلاً نمایش داده
+                نمی‌شد، در حالی که هر دو فیلد موقع ثبت آگهی الزامی‌اند.
+            --}}
+            <div class="contact-box">
+
+                @if($ad->full_name)
+                    <div class="contact-row">
+                        <span data-icon="users"></span>
+                        <div>
+                            <span class="contact-row__label">نام ارائه‌دهنده</span>
+                            <span class="contact-row__value">{{ $ad->full_name }}</span>
+                        </div>
+                    </div>
+                @endif
+
+                @if($ad->phone)
+                    <div class="contact-row">
+                        <span data-icon="phone"></span>
+                        <div>
+                            <span class="contact-row__label">شماره تماس</span>
+                            <span class="contact-row__value contact-row__value--ltr">{{ $ad->phone }}</span>
+                        </div>
+                    </div>
+                @endif
+
+                @if($ad->address)
+                    <div class="contact-row">
+                        <span data-icon="map"></span>
+                        <div>
+                            <span class="contact-row__label">آدرس</span>
+                            <span class="contact-row__value">{{ $ad->address }}</span>
+                        </div>
+                    </div>
+                @endif
+
+            </div>
+
+            @if($ad->phone)
+                <a class="btn btn-navy btn-block" style="margin-bottom:10px;" href="tel:{{ normalize_mobile($ad->phone) }}">
+                    تماس با ارائه‌دهنده
                 </a>
             @endif
 

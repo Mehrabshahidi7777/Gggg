@@ -66,6 +66,62 @@ class Ad extends Model
     public function images(){return $this->hasMany(AdImage::class)->orderByDesc('is_primary');}
     public function primaryImage(){return $this->hasOne(AdImage::class)->where('is_primary',true);}
     public function reviews(){return $this->hasMany(Review::class);}
+    public function ratings(){return $this->hasMany(AdRating::class);}
+
+    /*
+    | امتیازی که کاربرِ واردشده‌ی فعلی به این آگهی داده (اگر داده باشد).
+    | برای مهمان، user_id برابر null است و هیچ ردیفی نمی‌گیرد.
+    */
+    public function myRating()
+    {
+        return $this->hasOne(AdRating::class)->where('user_id', auth()->id());
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Rating aggregates
+    |--------------------------------------------------------------------------
+    |
+    | هر کارت آگهی میانگین، تعداد امتیاز و امتیازِ خودِ کاربر را نشان
+    | می‌دهد. بدون این scope، هر کارت در یک صفحه‌ی ۱۲تایی سه کوئری
+    | جداگانه می‌زد (N+1). این scope همه را در چند کوئری تجمیعی
+    | می‌آورد: ratings_avg_rating، ratings_count و رابطه‌ی myRating.
+    |
+    */
+    public function scopeWithRatingSummary($q)
+    {
+        $q->withAvg('ratings', 'rating')->withCount('ratings');
+
+        if (auth()->check()) {
+            $q->with('myRating');
+        }
+
+        return $q;
+    }
+
+    /*
+    | میانگین امتیاز به‌صورت عدد گردشده با یک رقم اعشار.
+    | اگر scope بالا صدا زده نشده باشد، به‌صورت تنبل از رابطه می‌خواند
+    | تا ویوها هرگز به خطا نخورند.
+    */
+    protected function ratingAverage(): Attribute
+    {
+        return Attribute::make(get: function () {
+
+            $avg = array_key_exists('ratings_avg_rating', $this->attributes)
+                ? $this->attributes['ratings_avg_rating']
+                : $this->ratings()->avg('rating');
+
+            return $avg === null ? null : round((float) $avg, 1);
+        });
+    }
+
+    protected function ratingCount(): Attribute
+    {
+        return Attribute::make(get: fn() => array_key_exists('ratings_count', $this->attributes)
+            ? (int) $this->attributes['ratings_count']
+            : $this->ratings()->count());
+    }
 
     protected function priceFormatted(): Attribute
     {

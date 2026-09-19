@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\EnsureOnlineCheckoutEnabled;
 use App\Models\Ad;
 use App\Models\ServiceSubscription;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'checkout.enabled' => EnsureOnlineCheckoutEnabled::class,
         ]);
 
         /*
@@ -171,6 +173,23 @@ $app = Application::configure(basePath: dirname(__DIR__))
                 ->delete();
 
         })->hourly();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Nightly cleanup
+        |--------------------------------------------------------------------------
+        |
+        | فایل‌های تصویرِ بی‌صاحب، پرداخت‌های نیمه‌کاره، OTPهای منقضی و
+        | پیش‌نویس‌های رهاشده. جزئیات در CleanupCommand.
+        |
+        | چون کرون‌جاب هاست از قبل هر دقیقه schedule:run را صدا می‌زند،
+        | این کار بدون هیچ تنظیم اضافه‌ای هر شب ساعت ۳ اجرا می‌شود.
+        |
+        */
+        $schedule->command('sazmat:cleanup')
+            ->dailyAt('03:00')
+            ->withoutOverlapping();
 
     })
 

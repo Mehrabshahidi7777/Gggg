@@ -9,8 +9,8 @@ class SellerProfileController extends Controller
 {
     public function show(User $user)
     {
-        $products = $user->ads()->approved()->where('type','product')->with(['category','province','city','primaryImage'])->latest()->paginate(12, ['*'], 'products_page');
-        $services = $user->ads()->approved()->where('type','service')->with(['category','province','city','primaryImage'])->latest()->limit(8)->get();
+        $products = $user->ads()->approved()->where('type','product')->with(['category','province','city','primaryImage'])->withRatingSummary()->latest()->paginate(12, ['*'], 'products_page');
+        $services = $user->ads()->approved()->where('type','service')->with(['category','province','city','primaryImage'])->withRatingSummary()->latest()->limit(8)->get();
         $reviewQuery = $user->receivedReviews()->with('buyer')->latest();
         $reviews = $reviewQuery->paginate(8, ['*'], 'reviews_page');
         $averageRating = round((float) ($user->receivedReviews()->avg('rating') ?? 0), 1);

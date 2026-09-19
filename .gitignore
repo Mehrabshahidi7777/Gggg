@@ -9,3 +9,5 @@
 /zzz/storage/framework/views/*
 /zzz/bootstrap/cache/*
 .DS_Store
+/zzz/storage/*.sqlite
+/zzz/.phpunit.result.cache

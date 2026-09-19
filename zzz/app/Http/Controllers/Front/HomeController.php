@@ -16,8 +16,12 @@ class HomeController extends Controller
             ->with([
                 'category',
                 'province',
+                // کارت آگهی نام شهر را هم چاپ می‌کند؛ بدون این eager
+                // load، هر کارت یک کوئری جداگانه برای city می‌زد.
+                'city',
                 'primaryImage',
             ])
+            ->withRatingSummary()
             ->latest()
             ->limit(8)
             ->get();
@@ -28,8 +32,12 @@ class HomeController extends Controller
             ->with([
                 'category',
                 'province',
+                // کارت آگهی نام شهر را هم چاپ می‌کند؛ بدون این eager
+                // load، هر کارت یک کوئری جداگانه برای city می‌زد.
+                'city',
                 'primaryImage',
             ])
+            ->withRatingSummary()
             ->latest()
             ->limit(8)
             ->get();

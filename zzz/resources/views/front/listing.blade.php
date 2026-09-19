@@ -53,6 +53,7 @@
             <select name="sort" aria-label="مرتب‌سازی">
                 <option value="latest" @selected(request('sort','latest')==='latest')>جدیدترین</option>
                 <option value="popular" @selected(request('sort')==='popular')>محبوب‌ترین</option>
+                <option value="top_rated" @selected(request('sort')==='top_rated')>بالاترین امتیاز</option>
                 <option value="price_low" @selected(request('sort')==='price_low')>ارزان‌ترین</option>
                 <option value="price_high" @selected(request('sort')==='price_high')>گران‌ترین</option>
             </select>

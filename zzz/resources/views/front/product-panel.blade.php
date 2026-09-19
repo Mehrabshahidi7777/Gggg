@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title','پنل محصولات')
+@section('title','پنل ارائه محصولات')
 
 @section('content')
 
@@ -8,7 +8,7 @@
 
     <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:28px;">
         <div>
-            <h1 style="margin-bottom:6px;">پنل ارائه محصولات </h1>
+            <h1 style="margin-bottom:6px;">پنل ارائه محصولات</h1>
             <p style="color:var(--color-steel);">مدیریت اشتراک و آگهی‌های محصول شما</p>
         </div>
 

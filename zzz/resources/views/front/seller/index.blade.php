@@ -47,7 +47,7 @@
 
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <h2 style="font-size:1.15rem;">خدمات</h2>
-                <a href="{{ route('service.panel') }}" style="color:var(--color-blueprint);font-weight:700;font-size:0.9rem;">پنل خدمات</a>
+                <a href="{{ route('service.panel') }}" style="color:var(--color-blueprint);font-weight:700;font-size:0.9rem;">پنل ارائه خدمات</a>
             </div>
 
             @if($subscription)

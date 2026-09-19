@@ -36,4 +36,5 @@ class User extends Authenticatable {
     public function orderItems(){return $this->hasMany(OrderItem::class,'seller_id');}
     public function receivedReviews(){return $this->hasMany(Review::class,'seller_id');}
     public function writtenReviews(){return $this->hasMany(Review::class,'buyer_id');}
+    public function adRatings(){return $this->hasMany(AdRating::class);}
 }

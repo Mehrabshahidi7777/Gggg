@@ -115,7 +115,9 @@
           </nav>
 
           <div class="header-actions">
-          @php $cartCount = array_sum(array_map('intval', session('cart', []))); @endphp
+          {{-- شمارش سبد خرید فقط وقتی معنی دارد که خرید آنلاین روشن باشد. --}}
+          @php $cartEnabled = config('marketplace.online_checkout'); @endphp
+          @php $cartCount = $cartEnabled ? array_sum(array_map('intval', session('cart', []))) : 0; @endphp
 
           @auth
           <a href="{{ route('ad.create') }}" class="btn btn-primary btn-sm">ثبت آگهی</a>
@@ -126,34 +128,39 @@
           <span data-icon="users"></span>
           <span>پنل کاربری</span>
           </button>
+          @if($cartEnabled)
           <span
           class="cart-badge account-header-badge {{ $cartCount > 0 ? '' : 'hidden' }}"
           id="cart-count-badge"
           aria-label="{{ $cartCount }} کالا در سبد خرید"
           >{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
+          @endif
           </div>
 
           <div class="account-dropdown" id="account-dropdown">
           <a href="{{ route('profile') }}"><span data-icon="users"></span><span>{{ auth()->user()->username ?: auth()->user()->name }}</span></a>
 
+          @if($cartEnabled)
           <a href="{{ route('cart.index') }}">
           <span data-icon="box"></span><span>سبد خرید</span>
           <span class="menu-count {{ $cartCount > 0 ? '' : 'hidden' }}" id="cart-menu-count">{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
           </a>
+          @endif
 
           @if(auth()->user()->ads()->where('type','service')->exists() || auth()->user()->serviceSubscriptions()->exists())
-          <a href="{{ route('service.panel') }}"><span data-icon="settings"></span><span>پنل خدمات</span></a>
+          <a href="{{ route('service.panel') }}"><span data-icon="settings"></span><span>پنل ارائه خدمات</span></a>
           @endif
 
-          @if(auth()->user()->ads()->where('type','product')->exists())
-          <a href="{{ route('seller.panel') }}"><span data-icon="building"></span><span>پنل فروشنده</span></a>
-          @endif
-
-          {{-- «پنل فروشنده» بالا برای مدیریت سفارش‌های خریدارهاست؛ این یکی
-               برای وضعیت اشتراک/انقضای خودِ آگهی‌های محصول است - دقیقاً
-               معادل «پنل خدمات» بالا، برای محصول. --}}
           @if(auth()->user()->ads()->where('type','product')->exists() || auth()->user()->productSubscriptions()->exists())
-          <a href="{{ route('product.panel') }}"><span data-icon="settings"></span><span>پنل اشتراک محصولات</span></a>
+          <a href="{{ route('product.panel') }}"><span data-icon="settings"></span><span>پنل ارائه محصولات</span></a>
+          @endif
+
+          {{-- «پنل فروشنده» فقط برای رسیدگی به سفارش‌های آنلاینِ قبلی است.
+               خرید آنلاین از روی آگهی‌ها برداشته شده، پس این پنل دیگر
+               سفارش جدید نمی‌گیرد و تنها به کسی نشان داده می‌شود که
+               سفارشِ باز و ناتمامی از قبل دارد. --}}
+          @if(auth()->user()->orderItems()->whereIn('status',['paid','processing','shipped'])->exists())
+          <a href="{{ route('seller.panel') }}"><span data-icon="building"></span><span>سفارش‌های در جریان</span></a>
           @endif
 
           <a href="{{ route('orders.index') }}"><span data-icon="box"></span><span>پنل مشتری</span></a>
@@ -166,10 +173,12 @@
           </div>
           </div>
           @else
+          @if($cartEnabled)
           <a href="{{ route('cart.index') }}" class="cart-guest cart-link" aria-label="سبد خرید">
           <span data-icon="box"></span><span class="txt-full">سبد خرید</span>
           <span class="cart-badge {{ $cartCount > 0 ? '' : 'hidden' }}" id="guest-cart-count-badge">{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
           </a>
+          @endif
           <a href="{{ route('login') }}" class="btn btn-ghost btn-sm">ورود</a>
           <a href="{{ route('register') }}" class="btn btn-primary btn-sm">ثبت‌نام</a>
           @endauth
@@ -270,6 +279,7 @@
           logout:`<svg ${common}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>`,
           mail:`<svg ${common}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>`,
           phone:`<svg ${common}><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z"/></svg>`,
+          map:`<svg ${common}><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>`,
           filter:`<svg ${common}><path d="M4 5h16M7 12h10M10 19h4"/></svg>`,
           star:`<svg ${common}><path d="m12 3 2.7 5.9 6.3.7-4.7 4.4 1.2 6.3L12 17.4l-5.5 2.9 1.2-6.3L3 9.6l6.3-.7Z"/></svg>`,
           shield:`<svg ${common}><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z"/><path d="m9 12 2 2 4-4"/></svg>`,
@@ -293,6 +303,94 @@
           openButton?.addEventListener('click',()=>{modal?.classList.remove('hidden');modal?.classList.add('flex');});
           closeButton?.addEventListener('click',()=>{modal?.classList.add('hidden');modal?.classList.remove('flex');});
           modal?.addEventListener('click',e=>{if(e.target===modal){modal.classList.add('hidden');modal.classList.remove('flex');}});
+          });
+          </script>
+
+          {{--
+          ویجت امتیاز ستاره‌ای.
+
+          ستاره‌ها هم روی کارت‌های فهرست و هم روی صفحه‌ی خود آگهی
+          استفاده می‌شوند. انتخاب یک ستاره بلافاصله با fetch ارسال
+          می‌شود تا کاربر از صفحه‌ی فهرست بیرون نرود. اگر جاوااسکریپت
+          در دسترس نباشد، همان فرم به‌صورت معمولی submit می‌شود
+          (دکمه‌ی داخل <noscript>).
+          --}}
+          <script>
+          document.addEventListener('DOMContentLoaded',()=>{
+
+          const LABELS={1:'افتضاح',2:'ضعیف',3:'متوسط',4:'خوب',5:'بسیار عالی'};
+          const token=document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+          // پرکردن ستاره‌ها تا مقدار انتخاب‌شده. این کار را CSS هم با
+          // :has() انجام می‌دهد؛ این‌جا برای مرورگرهای قدیمی‌تر تکرار
+          // می‌شود.
+          const paint=(group,value)=>{
+          group.querySelectorAll('.star-rate__star').forEach((label,index)=>{
+          label.querySelector('.star')?.classList.toggle('is-on',index < value);
+          });
+          };
+
+          document.querySelectorAll('[data-star-form]').forEach(form=>{
+
+          const group=form.querySelector('.star-rate__stars');
+          const live=form.querySelector('[data-star-live]');
+          const summary=form.closest('.star-rate')?.querySelector('.star-rate__summary');
+
+          paint(group, Number(form.querySelector('input[name="rating"]:checked')?.value || 0));
+
+          form.addEventListener('change',async e=>{
+
+          if(e.target.name!=='rating') return;
+
+          const value=Number(e.target.value);
+          paint(group,value);
+
+          if(live){
+          live.textContent='در حال ثبت…';
+          live.classList.remove('is-saved','is-error');
+          }
+
+          try{
+          const response=await fetch(form.action,{
+          method:'POST',
+          headers:{
+          'X-CSRF-TOKEN':token,
+          'Accept':'application/json',
+          'Content-Type':'application/json',
+          'X-Requested-With':'XMLHttpRequest'
+          },
+          body:JSON.stringify({rating:value})
+          });
+
+          const data=await response.json().catch(()=>({}));
+
+          if(!response.ok||!data.success){
+          if(live){
+          live.textContent=data.message||'ثبت امتیاز انجام نشد.';
+          live.classList.add('is-error');
+          }
+          return;
+          }
+
+          if(live){
+          live.textContent='امتیاز شما ثبت شد: '+(LABELS[value]||'');
+          live.classList.add('is-saved');
+          }
+
+          if(summary&&data.count){
+          summary.innerHTML='<span class="star-rate__avg">'+Number(data.average).toFixed(1)+
+          '</span><span class="star-rate__count">از '+data.count+' امتیاز</span>';
+          }
+
+          }catch(error){
+          if(live){
+          live.textContent='خطا در ارتباط با سرور. دوباره تلاش کنید.';
+          live.classList.add('is-error');
+          }
+          }
+          });
+          });
+
           });
           </script>
           </body>

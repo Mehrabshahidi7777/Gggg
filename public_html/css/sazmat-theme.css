@@ -587,3 +587,122 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 
 .detail-gallery-main img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
 @media(max-width:640px){.seller-hero{align-items:flex-start}.seller-stats{gap:10px}.seller-stats div{min-width:60px}}
+
+/* ==========================================================================
+   امتیاز ستاره‌ای آگهی (star-rating component)
+   --------------------------------------------------------------------------
+   صفحه RTL است، اما ظرف ستاره‌ها عمداً direction:ltr می‌گیرد تا ستاره‌ی
+   «افتضاح» سمت چپ و ستاره‌ی «بسیار عالی» سمت راست بیفتد.
+   ========================================================================== */
+
+.star-rate { display: flex; flex-direction: column; gap: 6px; }
+
+.star-rate__summary { display: flex; align-items: baseline; gap: 6px; font-size: .78rem; }
+.star-rate__avg { font-weight: 900; color: var(--color-ink); font-size: .95rem; }
+.star-rate__count { color: var(--color-steel-light); }
+
+.star-rate__stars {
+  direction: ltr;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  align-self: flex-start;
+  line-height: 1;
+}
+
+.star-rate__stars .star,
+.star-rate__star .star {
+  font-size: 1.25rem;
+  color: var(--color-line-strong);
+  transition: color .12s ease, transform .12s ease;
+}
+
+.star-rate__stars .star.is-on { color: var(--color-orange); }
+
+/* --- حالت انتخاب‌پذیر --- */
+
+.star-rate__star { cursor: pointer; display: inline-flex; }
+.star-rate__star input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+/* ستاره‌ی انتخاب‌شده و همه‌ی ستاره‌های سمت چپِ آن پر می‌شوند.
+   ظرف ltr است، پس «سمت چپِ» یک ستاره همان خواهرهای قبلیِ آن در DOM
+   است. این حالت را جاوااسکریپت با کلاس .is-on هم ست می‌کند تا اگر
+   مرورگر :has() نداشت باز هم درست کار کند. */
+.star-rate__star:has(input:checked) .star,
+.star-rate__star:has(~ .star-rate__star input:checked) .star,
+.star-rate__star .star.is-on { color: var(--color-orange); }
+
+/* پیش‌نمایش با هاور: خود ستاره و هرچه سمت چپش است پر می‌شود.
+   این قانون‌ها بعد از قانون‌های بالا می‌آیند تا موقع هاور بر انتخاب
+   فعلی غلبه کنند. */
+.star-rate__stars:hover .star,
+.star-rate__stars:hover .star.is-on { color: var(--color-line-strong); }
+.star-rate__star:hover .star,
+.star-rate__star:has(~ .star-rate__star:hover) .star { color: var(--color-orange); }
+.star-rate__star:hover .star { transform: scale(1.12); }
+
+.star-rate__star input:focus-visible ~ .star {
+  outline: 2px solid var(--color-blueprint);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* --- راهنمای حدها (چپ = بدترین، راست = بهترین) --- */
+
+.star-rate__scale {
+  direction: ltr;
+  display: flex;
+  justify-content: space-between;
+  max-width: 148px;
+  font-size: .66rem;
+  font-weight: 700;
+  color: var(--color-steel-light);
+}
+
+.star-rate__live { font-size: .74rem; color: var(--color-steel); margin: 0; min-height: 1.1em; }
+.star-rate__live.is-saved { color: var(--color-green); font-weight: 800; }
+.star-rate__live.is-error { color: var(--color-red); font-weight: 800; }
+
+.star-rate__hint { font-size: .72rem; color: var(--color-steel-light); margin: 0; }
+.star-rate__hint a { color: var(--color-blueprint); font-weight: 700; }
+
+.star-rate__legend {
+  display: flex; flex-wrap: wrap; gap: 4px 14px;
+  font-size: .74rem; color: var(--color-steel); margin-top: 4px;
+}
+.star-rate__legend b { color: var(--color-orange); margin-inline-end: 3px; }
+
+/* --- اندازه‌ها --- */
+
+.star-rate--compact { gap: 4px; padding: 10px 16px 12px; border-top: 1px solid var(--color-line); }
+.star-rate--compact .star { font-size: 1.05rem; }
+.star-rate--compact .star-rate__scale { max-width: 126px; }
+
+.star-rate--full {
+  gap: 8px; padding: 18px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+}
+.star-rate--full .star { font-size: 1.85rem; }
+.star-rate--full .star-rate__scale { max-width: 210px; font-size: .74rem; }
+
+/* ==========================================================================
+   اطلاعات تماس آگهی (نمایش عمومی برای محصول و خدمت)
+   ========================================================================== */
+
+.contact-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.contact-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; background: var(--color-paper);
+  border: 1px solid var(--color-line); border-radius: var(--radius-sm);
+}
+.contact-row__label { font-size: .72rem; color: var(--color-steel-light); font-weight: 700; display: block; margin-bottom: 3px; }
+.contact-row__value { font-weight: 800; color: var(--color-ink); line-height: 1.7; word-break: break-word; }
+.contact-row__value--ltr { direction: ltr; text-align: left; unicode-bidi: embed; }

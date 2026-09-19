@@ -56,11 +56,11 @@ class AdController extends Controller
         $search = trim((string) $request->input('search',''));
         if ($search === '') return redirect()->route('home');
 
-        $products = Ad::approved()->where('type','product')->with(['category','province','city','primaryImage'])
+        $products = Ad::approved()->where('type','product')->with(['category','province','city','primaryImage'])->withRatingSummary()
             ->where(fn($q)=>$q->where('title','like',"%{$search}%")->orWhere('description','like',"%{$search}%")->orWhere('brand','like',"%{$search}%")->orWhere('model','like',"%{$search}%")->orWhereHas('category',fn($c)=>$c->where('name','like',"%{$search}%")))
             ->latest()->limit(8)->get();
 
-        $services = Ad::approved()->where('type','service')->with(['category','province','city','primaryImage'])
+        $services = Ad::approved()->where('type','service')->with(['category','province','city','primaryImage'])->withRatingSummary()
             ->where(fn($q)=>$q->where('title','like',"%{$search}%")->orWhere('description','like',"%{$search}%")->orWhere('full_name','like',"%{$search}%")->orWhere('service_title','like',"%{$search}%")->orWhereHas('category',fn($c)=>$c->where('name','like',"%{$search}%")))
             ->latest()->limit(8)->get();
 
@@ -92,7 +92,8 @@ class AdController extends Controller
                 'province',
                 'city',
                 'primaryImage'
-            ]);
+            ])
+            ->withRatingSummary();
 
 
         /*
@@ -259,6 +260,18 @@ class AdController extends Controller
             'popular' =>
                 $q->orderByDesc('views_count'),
 
+            /*
+            | بالاترین امتیاز. آگهی بدون امتیاز NULL می‌گیرد و در MySQL
+            | با ORDER BY ... DESC اول می‌آید، که برعکسِ خواسته است؛
+            | پس اول بر اساس «امتیاز دارد یا نه» مرتب می‌شود و بعد بر
+            | اساس میانگین، و در نهایت تعداد امتیاز تا آگهی‌ای که ۵
+            | ستاره از یک نفر گرفته بالاتر از ۵ ستاره از ۲۰ نفر نایستد.
+            */
+            'top_rated' =>
+                $q->orderByRaw('ratings_avg_rating IS NULL')
+                  ->orderByDesc('ratings_avg_rating')
+                  ->orderByDesc('ratings_count'),
+
             default =>
                 $q->latest(),
         };
@@ -327,6 +340,7 @@ class AdController extends Controller
                 'images',
                 'reviews.buyer'
             ])
+            ->withRatingSummary()
             ->where(
                 'slug',
                 $slug
@@ -346,6 +360,7 @@ class AdController extends Controller
                 $ad->id
             )
             ->with('primaryImage')
+            ->withRatingSummary()
             ->latest()
             ->limit(4)
             ->get();

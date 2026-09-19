@@ -14,6 +14,7 @@ use App\Http\Controllers\Front\OrderController;
 use App\Http\Controllers\Front\SellerPanelController;
 use App\Http\Controllers\Front\SellerProfileController;
 use App\Http\Controllers\Front\ReviewController;
+use App\Http\Controllers\Front\AdRatingController;
 
 
 /*
@@ -51,6 +52,20 @@ Route::get('/seller/{user}', [SellerProfileController::class, 'show'])
 
 /*
 |--------------------------------------------------------------------------
+| Ad Rating
+|--------------------------------------------------------------------------
+|
+| امتیاز ستاره‌ای عمومی. هم از کارت‌های فهرست (AJAX) و هم از صفحه‌ی
+| خود آگهی (ارسال معمولی فرم) به همین مسیر می‌آید. throttle جلوی
+| اسکریپت‌نویسی برای بالا/پایین بردن سریع امتیازها را می‌گیرد.
+|
+*/
+Route::post('/ad/{ad}/rate', [AdRatingController::class, 'store'])
+    ->middleware(['auth', 'throttle:30,1'])
+    ->name('ad.rate');
+
+/*
+|--------------------------------------------------------------------------
 | Pages
 |--------------------------------------------------------------------------
 */
@@ -81,17 +96,25 @@ Route::get('/api/cities/{province}', [AdController::class, 'getCities'])
 |--------------------------------------------------------------------------
 */
 
-Route::get('/cart', [CartController::class, 'index'])
-    ->name('cart.index');
+/*
+| سبد خرید فقط وقتی در دسترس است که خرید آنلاین روشن باشد
+| (config/marketplace.php). در حالت فعلی، آگهی محصول هم مثل خدمت
+| «تماس مستقیم» است و این مسیرها غیرفعال‌اند.
+*/
+Route::middleware('checkout.enabled')->group(function () {
 
-Route::post('/cart/add/{ad}', [CartController::class, 'add'])
-    ->name('cart.add');
+    Route::get('/cart', [CartController::class, 'index'])
+        ->name('cart.index');
 
-Route::patch('/cart/{ad}', [CartController::class, 'update'])
-    ->name('cart.update');
+    Route::post('/cart/add/{ad}', [CartController::class, 'add'])
+        ->name('cart.add');
 
-Route::delete('/cart/{ad}', [CartController::class, 'remove'])
-    ->name('cart.remove');
+    Route::patch('/cart/{ad}', [CartController::class, 'update'])
+        ->name('cart.update');
+
+    Route::delete('/cart/{ad}', [CartController::class, 'remove'])
+        ->name('cart.remove');
+});
 
 
 /*
@@ -219,11 +242,19 @@ Route::middleware('auth')->group(function () {
     Route::post('/my-orders/{order}/items/{item}/review', [ReviewController::class, 'store'])
         ->name('orders.items.review');
 
-    Route::get('/checkout', [OrderController::class, 'checkout'])
-        ->name('checkout');
+    /*
+    | تسویه‌حساب هم مثل سبد خرید، تابع همان کلید است. تاریخچه‌ی
+    | سفارش‌های قبلی (بالاتر) عمداً بیرون از این محافظ مانده تا همیشه
+    | قابل مشاهده باشد.
+    */
+    Route::middleware('checkout.enabled')->group(function () {
 
-    Route::post('/checkout', [OrderController::class, 'place'])
-        ->name('checkout.place');
+        Route::get('/checkout', [OrderController::class, 'checkout'])
+            ->name('checkout');
+
+        Route::post('/checkout', [OrderController::class, 'place'])
+            ->name('checkout.place');
+    });
 
 
     /*
