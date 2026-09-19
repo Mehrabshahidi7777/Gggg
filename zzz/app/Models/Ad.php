@@ -38,19 +38,45 @@ class Ad extends Model
         return [
             'slug' => [
                 'source' => 'title',
-                'onUpdate' => true,
+
+                /*
+                | onUpdate عمداً false است.
+                |
+                | قبلاً true بود، یعنی هر بار که ادمین عنوان آگهی را
+                | ویرایش می‌کرد، اسلاگ و در نتیجه آدرس صفحه هم عوض
+                | می‌شد. هر لینکی که جایی به آن آگهی داده شده بود
+                | (نتایج گوگل، پیام واتساپ، لینک اشتراک‌گذاشته‌شده)
+                | از آن لحظه ۴۰۴ می‌شد.
+                |
+                | آدرس یک صفحه باید پایدار بماند. ضمناً همین تنظیم
+                | تضمین می‌کند آگهی‌های قدیمی که اسلاگ ترانویسی‌شده
+                | دارند، با تغییر الگوی اسلاگ‌سازیِ زیر آدرسشان عوض
+                | نشود و لینک‌های موجود سالم بماند.
+                */
+                'onUpdate' => false,
+
                 'unique' => true,
+
                 'method' => function ($string, $separator) {
-                    $slug = \Illuminate\Support\Str::slug($string, $separator);
 
                     /*
-                    | Titles that are entirely Persian/Arabic (or otherwise
-                    | non-Latin) can transliterate down to an empty string,
-                    | which breaks the ad.show route entirely wherever this
-                    | ad is linked to (home page, category pages, listings).
-                    | Always fall back to a random-but-valid slug instead.
+                    | Str::slug لاراول فارسی را ترانویسی می‌کند: «مصالح
+                    | پایه» می‌شد msalh-payh و «داب» می‌شد dab. گوگل از
+                    | این آدرس هیچ کلیدواژه‌ای برداشت نمی‌کرد و کاربر
+                    | هم از دیدن لینک نمی‌فهمید کجا می‌رود.
+                    |
+                    | fa_slug حروف فارسی را نگه می‌دارد، پس آدرس آگهی
+                    | می‌شود /ad/سیمان-تیپ-۲-اصفهان که هم برای کاربر
+                    | خواناست و هم برای موتور جست‌وجو معنا دارد.
                     */
+                    $slug = fa_slug($string, $separator);
 
+                    /*
+                    | عنوانی که فقط از نویسه‌های خاص یا ایموجی ساخته
+                    | شده می‌تواند به رشته‌ی خالی برسد و مسیر ad.show
+                    | را بشکند. در این حالت اسلاگ تصادفی اما معتبر
+                    | جایگزین می‌شود.
+                    */
                     return $slug !== ''
                         ? $slug
                         : 'ad-' . \Illuminate\Support\Str::random(8);
@@ -67,6 +93,7 @@ class Ad extends Model
     public function primaryImage(){return $this->hasOne(AdImage::class)->where('is_primary',true);}
     public function reviews(){return $this->hasMany(Review::class);}
     public function ratings(){return $this->hasMany(AdRating::class);}
+    public function contactReveals(){return $this->hasMany(AdContactReveal::class);}
 
     /*
     | امتیازی که کاربرِ واردشده‌ی فعلی به این آگهی داده (اگر داده باشد).

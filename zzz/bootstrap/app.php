@@ -191,6 +191,20 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->dailyAt('03:00')
             ->withoutOverlapping();
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Subscription renewal reminders
+        |--------------------------------------------------------------------------
+        |
+        | ساعت ۱۰ صبح - نه نیمه‌شب - تا پیامک در زمانی برسد که گیرنده
+        | بیدار است و می‌تواند همان لحظه اقدام کند.
+        |
+        */
+        $schedule->command('sazmat:subscription-reminders')
+            ->dailyAt('10:00')
+            ->withoutOverlapping();
+
     })
 
     ->create();

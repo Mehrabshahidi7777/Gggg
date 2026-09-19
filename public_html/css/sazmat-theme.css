@@ -706,3 +706,20 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 .contact-row__label { font-size: .72rem; color: var(--color-steel-light); font-weight: 700; display: block; margin-bottom: 3px; }
 .contact-row__value { font-weight: 800; color: var(--color-ink); line-height: 1.7; word-break: break-word; }
 .contact-row__value--ltr { direction: ltr; text-align: left; unicode-bidi: embed; }
+
+/* --- دکمه‌ی نمایش شماره تماس --- */
+
+.contact-reveal {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 2px; padding: 7px 16px;
+  background: var(--color-blueprint-tint); color: var(--color-blueprint);
+  border: 1.5px dashed var(--color-blueprint); border-radius: 999px;
+  font-family: inherit; font-size: .82rem; font-weight: 800;
+  cursor: pointer; transition: background .15s ease, color .15s ease;
+}
+.contact-reveal:hover:not(:disabled) { background: var(--color-blueprint); color: #fff; }
+.contact-reveal:disabled { opacity: .6; cursor: default; }
+.contact-reveal::before { content: "\260E"; font-size: .95rem; }
+
+.contact-reveal__value { display: inline-block; text-decoration: none; }
+.contact-reveal__value:hover { text-decoration: underline; }

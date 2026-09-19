@@ -7,6 +7,22 @@
 <title>@yield('title','سازمت')</title>
 <meta name="description" content="@yield('meta_description', 'سازمت، بازار آنلاین محصولات و خدمات صنعت ساختمان. محصولات، خدمات و متخصصان صنعت ساختمان را پیدا کن.')">
 
+{{--
+    آدرس متعارف (canonical).
+
+    بدون این تگ، هر ترکیبی از پارامترهای فیلتر و صفحه‌بندی
+    (?page=2&sort=popular&province=3&...) از نظر گوگل یک صفحه‌ی
+    جداگانه با محتوای تقریباً تکراری است. نتیجه‌اش پخش‌شدن اعتبار
+    صفحه بین ده‌ها آدرس و افت رتبه است.
+
+    پیش‌فرض، آدرس فعلی بدون هیچ پارامتری است؛ صفحه‌هایی که
+    صفحه‌بندی دارند خودشان canonical مناسب را تعریف می‌کنند.
+--}}
+<link rel="canonical" href="@yield('canonical', url()->current())">
+
+{{-- داده‌ی ساخت‌یافته و تگ‌های اختصاصی هر صفحه --}}
+@stack('head')
+
 {{-- آیکون سایت و تصویر برند برای نتایج گوگل / پیش‌نمایش لینک --}}
 <link rel="icon" type="image/jpeg" href="{{ asset('images/sazmat-logo.jpg') }}">
 <link rel="apple-touch-icon" href="{{ asset('images/sazmat-logo.jpg') }}">
@@ -391,6 +407,74 @@
           });
           });
 
+          });
+          </script>
+
+          {{--
+          نمایش شماره تماس.
+
+          شماره در HTML صفحه نیست؛ با کلیک از سرور گرفته می‌شود. همین
+          یک درخواست هم شمارش «سرنخ» را برای پنل ارائه‌دهنده ثبت می‌کند.
+          هر دو دکمه‌ی صفحه (داخل کادر تماس و دکمه‌ی بزرگ کناری) به یک
+          کادر وصل‌اند و با هم به‌روز می‌شوند.
+          --}}
+          <script>
+          document.addEventListener('DOMContentLoaded',()=>{
+
+          const box=document.querySelector('[data-contact-box]');
+          if(!box) return;
+
+          const token=document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+          const value=box.querySelector('[data-contact-value]');
+          const buttons=document.querySelectorAll('[data-contact-reveal]');
+          let loading=false, revealed=false;
+
+          const reveal=async()=>{
+
+          if(loading) return;
+
+          // بار دوم به بعد: فقط شماره‌گیری، بدون درخواست دوباره
+          if(revealed){ window.location.href=value.getAttribute('href'); return; }
+
+          loading=true;
+          buttons.forEach(b=>{b.disabled=true;b.dataset.prev=b.textContent;b.textContent='لطفاً صبر کنید…';});
+
+          try{
+          const response=await fetch(box.dataset.url,{
+          method:'POST',
+          headers:{'X-CSRF-TOKEN':token,'Accept':'application/json','X-Requested-With':'XMLHttpRequest'},
+          credentials:'same-origin'
+          });
+
+          const data=await response.json().catch(()=>({}));
+
+          if(!response.ok||!data.success){
+          buttons.forEach(b=>{b.disabled=false;b.textContent=data.message||'دوباره تلاش کنید';});
+          loading=false;
+          return;
+          }
+
+          revealed=true;
+
+          value.textContent=data.phone;
+          value.setAttribute('href',data.tel);
+          value.hidden=false;
+
+          buttons.forEach(b=>{
+          b.disabled=false;
+          // دکمه‌ی کوچکِ داخل کادر دیگر لازم نیست؛ خودِ شماره جایش را می‌گیرد.
+          if(b.classList.contains('contact-reveal')) b.remove();
+          else b.textContent='تماس: '+data.phone;
+          });
+
+          }catch(error){
+          buttons.forEach(b=>{b.disabled=false;b.textContent=b.dataset.prev||'نمایش شماره';});
+          }finally{
+          loading=false;
+          }
+          };
+
+          buttons.forEach(b=>b.addEventListener('click',reveal));
           });
           </script>
           </body>

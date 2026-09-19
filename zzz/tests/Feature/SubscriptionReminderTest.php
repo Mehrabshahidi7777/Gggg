@@ -1,0 +1,169 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\ServicePlan;
+use App\Models\ServiceSubscription;
+use App\Models\User;
+use App\Services\AmootSmsService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
+use Tests\TestCase;
+
+class SubscriptionReminderTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private ServicePlan $plan;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->plan = ServicePlan::create([
+            'type' => 'service', 'months' => 1, 'title' => 'یک ماهه',
+            'price' => 150000, 'is_active' => true, 'sort_order' => 1,
+        ]);
+    }
+
+    private function user(string $mobile = '09121234567'): User
+    {
+        return User::create([
+            'name' => 'کاربر',
+            'username' => 'u' . $mobile,
+            'mobile' => $mobile,
+            'password' => 'secret-password',
+        ]);
+    }
+
+    private function subscription(User $user, $endsAt, string $status = 'active'): ServiceSubscription
+    {
+        return ServiceSubscription::create([
+            'type' => 'service',
+            'user_id' => $user->id,
+            'service_plan_id' => $this->plan->id,
+            'amount' => 150000,
+            'starts_at' => now()->subMonth(),
+            'ends_at' => $endsAt,
+            'status' => $status,
+        ]);
+    }
+
+    /* ارسال پیامک را جعل می‌کنیم تا تست به سامانه‌ی واقعی وصل نشود. */
+    private function fakeSms(): Mockery\MockInterface
+    {
+        $mock = Mockery::mock(AmootSmsService::class);
+        $this->app->instance(AmootSmsService::class, $mock);
+
+        return $mock;
+    }
+
+    public function test_seven_day_reminder_is_sent_once(): void
+    {
+        $subscription = $this->subscription($this->user(), now()->addDays(5));
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->once();
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+
+        $this->assertNotNull($subscription->fresh()->reminder_7d_sent_at);
+
+        // اجرای دوباره نباید پیامک دیگری بفرستد
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    public function test_expiry_reminder_is_sent_for_finished_subscription(): void
+    {
+        $subscription = $this->subscription($this->user(), now()->subHour(), 'expired');
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->once();
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+
+        $this->assertNotNull($subscription->fresh()->reminder_expired_sent_at);
+    }
+
+    /*
+    | مهم‌ترین حالت: کاربر از قبل تمدید کرده. رکورد قدیمی نباید باعث
+    | پیامک «اشتراکت دارد تمام می‌شود» شود، چون واقعیت این نیست.
+    */
+    public function test_no_reminder_when_user_already_renewed(): void
+    {
+        $user = $this->user();
+
+        $old = $this->subscription($user, now()->addDays(3));
+
+        // تمدید: از جایی که قبلی تمام می‌شود ادامه پیدا می‌کند
+        ServiceSubscription::create([
+            'type' => 'service',
+            'user_id' => $user->id,
+            'service_plan_id' => $this->plan->id,
+            'amount' => 150000,
+            'starts_at' => now()->addDays(3),
+            'ends_at' => now()->addDays(33),
+            'status' => 'active',
+        ]);
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->never();
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+
+        $this->assertNotNull($old->fresh()->reminder_7d_sent_at);
+    }
+
+    public function test_failed_sms_is_retried_next_run(): void
+    {
+        $subscription = $this->subscription($this->user(), now()->addDays(5));
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')
+            ->once()
+            ->andThrow(new \RuntimeException('سامانه در دسترس نیست'));
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+
+        // چون ارسال نشده، ستون خالی می‌ماند تا فردا دوباره تلاش شود
+        $this->assertNull($subscription->fresh()->reminder_7d_sent_at);
+    }
+
+    public function test_user_without_mobile_is_skipped_without_error(): void
+    {
+        $user = User::create([
+            'name' => 'بدون موبایل',
+            'username' => 'nomobile',
+            'email' => 'x@example.com',
+            'password' => 'secret-password',
+        ]);
+
+        $subscription = $this->subscription($user, now()->addDays(5));
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->never();
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+
+        $this->assertNotNull($subscription->fresh()->reminder_7d_sent_at);
+    }
+
+    public function test_dry_run_sends_nothing(): void
+    {
+        $subscription = $this->subscription($this->user(), now()->addDays(5));
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->never();
+
+        $this->artisan('sazmat:subscription-reminders', ['--dry-run' => true])
+            ->assertSuccessful();
+
+        $this->assertNull($subscription->fresh()->reminder_7d_sent_at);
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
+}

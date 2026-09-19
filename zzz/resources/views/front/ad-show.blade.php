@@ -2,6 +2,86 @@
 
 @section('title', $ad->title . ' | سازمت')
 
+{{--
+    توضیح متا اختصاصی هر آگهی.
+
+    قبلاً همه‌ی صفحه‌های سایت یک توضیح یکسان داشتند. گوگل توضیح
+    تکراری را نشانه‌ی صفحه‌ی کم‌ارزش می‌داند و معمولاً خودش متنی از
+    صفحه برمی‌دارد که کنترلی رویش نداریم. این متن از دسته‌بندی،
+    شهر و توضیح خودِ آگهی ساخته می‌شود و به ۱۶۰ نویسه محدود است -
+    طولانی‌تر از آن در نتایج گوگل بریده می‌شود.
+--}}
+@section('meta_description', \Illuminate\Support\Str::limit(
+    $ad->category->name . ' در ' . $ad->city->name . '، ' . $ad->province->name . '. '
+    . ($ad->description ?: $ad->title),
+    155
+))
+
+@push('head')
+{{--
+    داده‌ی ساخت‌یافته برای نتایج گوگل.
+
+    مهم‌ترین بخشش aggregateRating است: وقتی آگهی امتیاز داشته باشد،
+    گوگل می‌تواند ستاره‌ها را مستقیماً کنار نتیجه نشان دهد و همین
+    نرخ کلیک را به‌شکل محسوسی بالا می‌برد.
+
+    aggregateRating فقط وقتی اضافه می‌شود که واقعاً امتیازی ثبت شده
+    باشد؛ فرستادن ratingValue خالی یا صفر باعث خطای Rich Result در
+    سرچ کنسول می‌شود.
+--}}
+@php
+    /*
+    | کلیدهای null قبل از تولید JSON حذف می‌شوند. فرستادن مقدار null
+    | به گوگل باعث خطای «Invalid value» در گزارش Rich Result می‌شود.
+    */
+    $schema = array_filter([
+        '@context' => 'https://schema.org',
+        '@type' => $ad->type === 'service' ? 'Service' : 'Product',
+        'name' => $ad->title,
+        'description' => \Illuminate\Support\Str::limit($ad->description ?: $ad->title, 400),
+        'url' => route('ad.show', $ad->slug),
+        'category' => $ad->category->name,
+        'image' => $ad->images->map(fn ($i) => asset('storage/' . $i->path))->values()->all(),
+        'areaServed' => $ad->province->name . '، ' . $ad->city->name,
+
+        'brand' => $ad->brand
+            ? ['@type' => 'Brand', 'name' => $ad->brand]
+            : null,
+
+        /*
+        | قیمت‌ها در این سایت به «تومان» ذخیره می‌شوند، اما schema.org
+        | کد ارز استاندارد ISO 4217 می‌خواهد و کد رسمی ایران IRR
+        | (ریال) است - کدی به نام IRT وجود ندارد و گوگل آن را
+        | نمی‌پذیرد. پس مقدار باید به ریال تبدیل شود، وگرنه قیمتی که
+        | در نتایج گوگل نمایش داده می‌شود یک‌دهمِ قیمت واقعی است.
+        */
+        'offers' => $ad->price
+            ? [
+                '@type' => 'Offer',
+                'price' => (string) ((int) $ad->price * 10),
+                'priceCurrency' => 'IRR',
+                'availability' => 'https://schema.org/InStock',
+                'url' => route('ad.show', $ad->slug),
+            ]
+            : null,
+
+        'aggregateRating' => $ad->rating_count
+            ? [
+                '@type' => 'AggregateRating',
+                'ratingValue' => (string) $ad->rating_average,
+                'reviewCount' => $ad->rating_count,
+                'bestRating' => '5',
+                'worstRating' => '1',
+            ]
+            : null,
+
+    ], fn ($v) => $v !== null && $v !== [] && $v !== '');
+@endphp
+<script type="application/ld+json">
+{!! json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}
+</script>
+@endpush
+
 @section('content')
 
 <div class="container" style="padding-top:28px;">
@@ -123,12 +203,28 @@
                     </div>
                 @endif
 
+                {{--
+                    شماره عمداً داخل HTML چاپ نمی‌شود. با کلیک روی دکمه
+                    از مسیر ad.contact گرفته می‌شود تا ربات‌ها نتوانند با
+                    یک خزش ساده کل شماره‌های سایت را جمع کنند، و در عین
+                    حال هر نمایش برای آمار پنل ارائه‌دهنده ثبت شود.
+                --}}
                 @if($ad->phone)
-                    <div class="contact-row">
+                    <div class="contact-row" data-contact-box data-url="{{ route('ad.contact', $ad) }}">
                         <span data-icon="phone"></span>
-                        <div>
+                        <div style="flex:1;">
                             <span class="contact-row__label">شماره تماس</span>
-                            <span class="contact-row__value contact-row__value--ltr">{{ $ad->phone }}</span>
+
+                            <button type="button" class="contact-reveal" data-contact-reveal>
+                                نمایش شماره
+                            </button>
+
+                            <a
+                                class="contact-row__value contact-row__value--ltr contact-reveal__value"
+                                data-contact-value
+                                href="#"
+                                hidden
+                            ></a>
                         </div>
                     </div>
                 @endif
@@ -146,9 +242,9 @@
             </div>
 
             @if($ad->phone)
-                <a class="btn btn-navy btn-block" style="margin-bottom:10px;" href="tel:{{ normalize_mobile($ad->phone) }}">
+                <button type="button" class="btn btn-navy btn-block" style="margin-bottom:10px;" data-contact-reveal>
                     تماس با ارائه‌دهنده
-                </a>
+                </button>
             @endif
 
             @if($ad->website)

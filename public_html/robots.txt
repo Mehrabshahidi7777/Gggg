@@ -1,2 +1,17 @@
 User-agent: *
 Allow: /
+
+# صفحه‌هایی که برای موتور جست‌وجو ارزشی ندارند و فقط بودجه‌ی خزش را
+# هدر می‌دهند یا محتوای تکراری تولید می‌کنند.
+Disallow: /cart
+Disallow: /checkout
+Disallow: /my-orders
+Disallow: /profile
+Disallow: /admin-panel
+Disallow: /login
+Disallow: /register
+Disallow: /payments/
+Disallow: /search?
+Disallow: /api/
+
+Sitemap: https://sazmat.com/sitemap.xml

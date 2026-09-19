@@ -33,6 +33,15 @@ return [
         'token' => env('AMOOT_TOKEN'),
         'line_number' => env('AMOOT_LINE_NUMBER'),
         'pattern_code_id' => env('AMOOT_PATTERN_CODE_ID'),
+
+        /*
+        | اختیاری. اگر برای «یادآوری تمدید اشتراک» یک پترن در پنل آموت
+        | تعریف کرده‌اید، شناسه‌اش را اینجا بگذارید. خالی بماند، پیامک
+        | به‌صورت متن ساده ارسال می‌شود (نیازمند خط خدماتی).
+        |
+        | ترتیب مقادیر پترن: {نام کاربر} ; {نوع اشتراک} ; {تعداد روز}
+        */
+        'pattern_renewal_id' => env('AMOOT_PATTERN_RENEWAL_ID'),
     ],
 
     'zarinpal' => [

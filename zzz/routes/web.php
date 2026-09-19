@@ -15,6 +15,8 @@ use App\Http\Controllers\Front\SellerPanelController;
 use App\Http\Controllers\Front\SellerProfileController;
 use App\Http\Controllers\Front\ReviewController;
 use App\Http\Controllers\Front\AdRatingController;
+use App\Http\Controllers\Front\AdContactController;
+use App\Http\Controllers\Front\SitemapController;
 
 
 /*
@@ -66,9 +68,27 @@ Route::post('/ad/{ad}/rate', [AdRatingController::class, 'store'])
 
 /*
 |--------------------------------------------------------------------------
+| Contact Reveal
+|--------------------------------------------------------------------------
+|
+| شماره تماس دیگر داخل HTML صفحه نیست و فقط از این مسیر برگردانده
+| می‌شود. throttle عمداً سفت است (۲۰ درخواست در دقیقه برای هر IP):
+| یک کاربر واقعی در دقیقه نهایتاً چند آگهی را باز می‌کند، اما رباتی
+| که می‌خواهد کل شماره‌های سایت را جمع کند خیلی زود متوقف می‌شود.
+|
+*/
+Route::post('/ad/{ad}/contact', [AdContactController::class, 'show'])
+    ->middleware('throttle:20,1')
+    ->name('ad.contact');
+
+/*
+|--------------------------------------------------------------------------
 | Pages
 |--------------------------------------------------------------------------
 */
+
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])
+    ->name('sitemap');
 
 Route::get('/about', [PageController::class, 'about'])
     ->name('about');

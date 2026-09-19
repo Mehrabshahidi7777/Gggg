@@ -17,7 +17,7 @@
 
     {{-- Statistics --}}
 
-    <div class="sz-grid sz-grid-3" style="margin-bottom:24px;">
+    <div class="sz-grid sz-grid-4" style="margin-bottom:24px;">
 
         <div class="corner-card stat-card">
             <div class="label">پلنی که آخرین بار ثبت شده </div>
@@ -27,6 +27,21 @@
         <div class="corner-card stat-card">
             <div class="label">محصولات ثبت‌شده</div>
             <div class="value">{{ $productCount }}</div>
+        </div>
+
+        {{--
+            «سرنخ» یعنی دفعاتی که یک بازدیدکننده روی «نمایش شماره»
+            کلیک کرده - نه صرفاً بازدید صفحه. این عددی است که نشان
+            می‌دهد اشتراک واقعاً مشتری آورده یا نه. بازدیدکننده‌ی
+            تکراری در یک روز فقط یک بار شمرده می‌شود و بازدید خودِ
+            صاحب آگهی اصلاً شمرده نمی‌شود.
+        --}}
+        <div class="corner-card stat-card">
+            <div class="label">تماس‌های این ماه</div>
+            <div class="value">{{ number_format($leadsThisMonth) }}</div>
+            <div style="font-size:.72rem;color:var(--color-steel-light);margin-top:4px;">
+                مجموع از ابتدا: {{ number_format($leadsTotal) }}
+            </div>
         </div>
 
         <div class="corner-card stat-card">

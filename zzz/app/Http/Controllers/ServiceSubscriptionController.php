@@ -548,10 +548,25 @@ class ServiceSubscriptionController extends Controller
         $services = $user
             ->ads()
             ->where('type', 'service')
+            ->withCount([
+                /*
+                | تعداد دفعاتی که بازدیدکننده‌ها شماره‌ی این آگهی را
+                | دیده‌اند - یعنی سرنخ واقعی، نه صرفاً بازدید صفحه.
+                | همین عدد است که به ارائه‌دهنده نشان می‌دهد اشتراکش
+                | ارزش داشته یا نه.
+                */
+                'contactReveals as leads_total',
+                'contactReveals as leads_this_month' => fn ($q) => $q->where(
+                    'created_at', '>=', now()->startOfMonth()
+                ),
+            ])
             ->latest()
             ->get();
 
         $serviceCount = $services->count();
+
+        $leadsThisMonth = $services->sum('leads_this_month');
+        $leadsTotal = $services->sum('leads_total');
 
         return view(
             'front.service-panel',
@@ -559,6 +574,8 @@ class ServiceSubscriptionController extends Controller
                 'subscription',
                 'services',
                 'serviceCount',
+                'leadsThisMonth',
+                'leadsTotal',
                 'isCurrentlyActive',
                 'chainStart',
                 'chainEnd'

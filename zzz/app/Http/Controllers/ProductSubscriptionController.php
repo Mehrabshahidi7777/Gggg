@@ -487,10 +487,25 @@ class ProductSubscriptionController extends Controller
         $products = $user
             ->ads()
             ->where('type', 'product')
+            ->withCount([
+                /*
+                | تعداد دفعاتی که بازدیدکننده‌ها شماره‌ی این آگهی را
+                | دیده‌اند - یعنی سرنخ واقعی، نه صرفاً بازدید صفحه.
+                | همین عدد است که به ارائه‌دهنده نشان می‌دهد اشتراکش
+                | ارزش داشته یا نه.
+                */
+                'contactReveals as leads_total',
+                'contactReveals as leads_this_month' => fn ($q) => $q->where(
+                    'created_at', '>=', now()->startOfMonth()
+                ),
+            ])
             ->latest()
             ->get();
 
         $productCount = $products->count();
+
+        $leadsThisMonth = $products->sum('leads_this_month');
+        $leadsTotal = $products->sum('leads_total');
 
         return view(
             'front.product-panel',
@@ -498,6 +513,8 @@ class ProductSubscriptionController extends Controller
                 'subscription',
                 'products',
                 'productCount',
+                'leadsThisMonth',
+                'leadsTotal',
                 'isCurrentlyActive',
                 'chainStart',
                 'chainEnd'

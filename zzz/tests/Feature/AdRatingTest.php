@@ -141,10 +141,16 @@ class AdRatingTest extends TestCase
         $this->assertSame(2, $loaded->rating_count);
     }
 
+    /*
+    | اطلاعات تماس برای هر دو نوع آگهی در دسترس است.
+    |
+    | آدرس مستقیماً در صفحه چاپ می‌شود، اما شماره تماس پشت دکمه‌ی
+    | «نمایش شماره» است تا ربات‌ها نتوانند با یک خزش ساده کل
+    | شماره‌های سایت را جمع کنند. خودِ گرفتن شماره در
+    | ContactRevealTest آزمایش می‌شود.
+    */
     public function test_ad_page_shows_contact_details_for_both_types(): void
     {
-        $owner = $this->user('09120000001');
-
         foreach (['product', 'service'] as $index => $type) {
 
             $ad = $this->makeAd($this->user('0912000100' . $index), $type);
@@ -152,9 +158,12 @@ class AdRatingTest extends TestCase
             $response = $this->get(route('ad.show', $ad->slug));
 
             $response->assertOk();
-            $response->assertSee('09121234567');
             $response->assertSee('خیابان تست، پلاک ۱', false);
+            $response->assertSee('نمایش شماره', false);
             $response->assertSee('به این آگهی امتیاز بدهید', false);
+
+            // شماره نباید در HTML صفحه باشد
+            $response->assertDontSee('09121234567');
         }
     }
 
