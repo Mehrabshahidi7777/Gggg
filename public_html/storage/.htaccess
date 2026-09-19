@@ -1,0 +1,41 @@
+# =============================================================================
+#  سازمت | محافظت از پوشه‌ی آپلود کاربران
+# =============================================================================
+#
+#  این پوشه داخل DocumentRoot است و هر فایلی که کاربرها آپلود می‌کنند
+#  مستقیماً از وب قابل دسترسی است. اعتبارسنجی آپلود در AdSubmitRequest
+#  سختگیرانه است (قانون image + mimes)، اما این فایل لایه‌ی دوم دفاع
+#  است: حتی اگر روزی فایلی با پسوند اجرایی به اینجا راه پیدا کند،
+#  وب‌سرور آن را اجرا نمی‌کند.
+#
+#  این فایل باید در  public_html/storage/.htaccess  قرار بگیرد.
+# =============================================================================
+
+# اجازه‌ی فهرست‌کردن محتویات پوشه و اجرای CGI را بگیر.
+Options -Indexes -ExecCGI
+
+# هیچ پسوندی در این شاخه نباید به مفسر PHP سپرده شود.
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar .cgi .pl .py
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .phar
+
+# اگر mod_php فعال باشد، موتور PHP را در این شاخه کاملاً خاموش کن.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# و در نهایت، دسترسی به هر فایلِ با پسوند اجرایی را به‌کلی ببند.
+<FilesMatch "\.(?i:php|phtml|php[0-9]|phar|cgi|pl|py|sh|bash|exe|so|htaccess|htpasswd)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
