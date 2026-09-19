@@ -347,6 +347,34 @@ class AdEditApprovalTest extends TestCase
         $this->assertDatabaseCount('ad_edits', 0);
     }
 
+    /*
+    | ستون ads.address در دیتابیس varchar(255) است. اگر قانون
+    | اعتبارسنجی بیشتر اجازه بدهد، MySQL در حالت strict خطای
+    | «Data too long» می‌دهد و کاربر به‌جای پیام خطا صفحه‌ی ۵۰۰
+    | می‌بیند. این تست جلوی برگشت آن اشتباه را می‌گیرد.
+    */
+    public function test_address_longer_than_the_column_is_rejected_cleanly(): void
+    {
+        $this->actingAs($this->owner)
+            ->put(route('ad.edit.store', $this->ad), $this->payload([
+                'address' => str_repeat('ا', 256),
+            ]))
+            ->assertSessionHasErrors('address');
+
+        $this->assertDatabaseCount('ad_edits', 0);
+    }
+
+    public function test_address_at_the_column_limit_is_accepted(): void
+    {
+        $this->actingAs($this->owner)
+            ->put(route('ad.edit.store', $this->ad), $this->payload([
+                'address' => str_repeat('ا', 255),
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseCount('ad_edits', 1);
+    }
+
     public function test_admin_sees_a_readable_diff(): void
     {
         $this->actingAs($this->owner)

@@ -64,7 +64,8 @@ class AdController extends Controller
                 Rule::exists('cities', 'id')->where(fn ($q) => $q->where('province_id', $r->input('province_id'))),
             ],
 
-            'address' => ['required', 'string', 'max:1000'],
+            // ستون ads.address در دیتابیس varchar(255) است
+            'address' => ['required', 'string', 'max:255'],
 
             /*
             | همان قالبی که فرم ثبت و ویرایش آگهی اجبار می‌کند.
@@ -128,6 +129,7 @@ class AdController extends Controller
 
         $data = $r->validate($rules, [
             'phone.regex' => 'شماره تلفن باید ۱۱ رقم و با ۰ شروع شود (مثال: 09121234567).',
+            'address.max' => 'آدرس حداکثر ۲۵۵ نویسه می‌تواند باشد.',
             'category_id.exists' => 'دسته‌بندی انتخاب‌شده با نوع آگهی سازگار نیست.',
             'city_id.exists' => 'شهر انتخاب‌شده با استان سازگار نیست.',
             'card_number.digits' => 'شماره شبا باید ۲۴ رقم باشد (بدون IR).',

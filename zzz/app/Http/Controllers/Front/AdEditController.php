@@ -158,7 +158,14 @@ class AdEditController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'price' => ['nullable', 'numeric', 'min:0'],
-            'address' => ['required', 'string', 'max:1000'],
+            /*
+            | سقف ۲۵۵ نویسه است، نه بیشتر: ستون `ads.address` در
+            | دیتابیس varchar(255) است. اگر قانون اجازه‌ی بیشتر بدهد،
+            | MySQL در حالت strict (پیش‌فرض MySQL 8) خطای
+            | «Data too long» می‌دهد و کاربر صفحه‌ی ۵۰۰ می‌بیند
+            | به‌جای یک پیام خطای قابل‌فهم.
+            */
+            'address' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'regex:/^0[0-9]{10}$/'],
 
             'category_id' => [
@@ -200,6 +207,7 @@ class AdEditController extends Controller
 
         $validated = $request->validate($rules, [
             'phone.regex' => 'شماره تلفن باید ۱۱ رقم و با ۰ شروع شود (مثال: 09121234567).',
+            'address.max' => 'آدرس حداکثر ۲۵۵ نویسه می‌تواند باشد.',
             'category_id.exists' => 'دسته‌بندی انتخاب‌شده با نوع آگهی سازگار نیست.',
             'city_id.exists' => 'شهر انتخاب‌شده با استان سازگار نیست.',
             'card_number.digits' => 'شماره شبا باید ۲۴ رقم باشد (بدون IR).',
