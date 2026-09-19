@@ -166,6 +166,24 @@
                             <div>
                                 <div style="font-weight:800;">{{ $service->title }}</div>
                                 <div style="font-size:0.85rem;color:var(--color-steel-light);margin-top:6px;">{{ $service->status_text }}</div>
+
+                                {{--
+                                    ویرایش همیشه در دسترس است، ولی اگر
+                                    درخواست بررسی‌نشده‌ای در صف باشد
+                                    وضعیتش همین‌جا اعلام می‌شود تا کاربر
+                                    فکر نکند تغییرش گم شده.
+                                --}}
+                                @php $pending = $service->edits()->pending()->exists(); @endphp
+
+                                <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                    <a class="btn btn-ghost btn-sm" href="{{ route('ad.edit', $service) }}">ویرایش اطلاعات</a>
+
+                                    @if($pending)
+                                        <span style="font-size:.75rem;color:var(--color-amber);font-weight:800;">
+                                            ویرایش در انتظار تأیید مدیر
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
 
                             @if($service->is_suspended)

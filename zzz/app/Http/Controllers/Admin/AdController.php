@@ -65,7 +65,14 @@ class AdController extends Controller
             ],
 
             'address' => ['required', 'string', 'max:1000'],
-            'phone' => ['nullable', 'string', 'max:30'],
+
+            /*
+            | همان قالبی که فرم ثبت و ویرایش آگهی اجبار می‌کند.
+            | قبلاً اینجا فقط 'string|max:30' بود، یعنی ادمین می‌توانست
+            | شماره‌ای ذخیره کند که فرم کاربر هرگز نمی‌پذیرفت - و
+            | همان شماره بعداً در لینک tel: کار نمی‌کرد.
+            */
+            'phone' => ['required', 'regex:/^0[0-9]{10}$/'],
 
             'status' => ['required', Rule::in(['pending', 'approved', 'rejected'])],
             'rejection_reason' => ['nullable', 'string', 'max:1000'],
@@ -107,7 +114,20 @@ class AdController extends Controller
             ];
         }
 
+        /*
+        | ارقام فارسی را قبل از اعتبارسنجی یکدست می‌کنیم، دقیقاً مثل
+        | فرم سمت کاربر.
+        */
+        $r->merge([
+            'phone' => $r->filled('phone') ? normalize_mobile($r->input('phone')) : null,
+            'card_number' => $r->filled('card_number')
+                ? preg_replace('/\D+/', '', fa_to_en_digits($r->input('card_number')))
+                : null,
+            'price' => $r->filled('price') ? fa_to_en_digits($r->input('price')) : null,
+        ]);
+
         $data = $r->validate($rules, [
+            'phone.regex' => 'شماره تلفن باید ۱۱ رقم و با ۰ شروع شود (مثال: 09121234567).',
             'category_id.exists' => 'دسته‌بندی انتخاب‌شده با نوع آگهی سازگار نیست.',
             'city_id.exists' => 'شهر انتخاب‌شده با استان سازگار نیست.',
             'card_number.digits' => 'شماره شبا باید ۲۴ رقم باشد (بدون IR).',

@@ -17,6 +17,7 @@ use App\Http\Controllers\Front\ReviewController;
 use App\Http\Controllers\Front\AdRatingController;
 use App\Http\Controllers\Front\AdContactController;
 use App\Http\Controllers\Front\SitemapController;
+use App\Http\Controllers\Front\AdEditController;
 
 
 /*
@@ -228,6 +229,24 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/submit-ad', [AdSubmitController::class, 'store'])
         ->name('ad.store');
+
+
+    /*
+    | Ad Editing
+    |
+    | ارائه‌دهنده آگهی خودش را ویرایش می‌کند، اما تغییر بلافاصله روی
+    | سایت نمی‌نشیند: به‌صورت درخواست ثبت می‌شود و منتظر تأیید مدیر
+    | می‌ماند.
+    */
+
+    Route::get('/my-ads/{ad}/edit', [AdEditController::class, 'edit'])
+        ->name('ad.edit');
+
+    Route::put('/my-ads/{ad}', [AdEditController::class, 'update'])
+        ->name('ad.edit.store');
+
+    Route::delete('/my-ads/{ad}/edit', [AdEditController::class, 'cancel'])
+        ->name('ad.edit.cancel');
 
 
     /*

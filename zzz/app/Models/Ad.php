@@ -94,6 +94,19 @@ class Ad extends Model
     public function reviews(){return $this->hasMany(Review::class);}
     public function ratings(){return $this->hasMany(AdRating::class);}
     public function contactReveals(){return $this->hasMany(AdContactReveal::class);}
+    public function edits(){return $this->hasMany(AdEdit::class);}
+
+    /*
+    | نظرهای تأییدشده‌ی کاربران روی این آگهی. نظر تأییدنشده هرگز
+    | نباید در صفحه‌ی عمومی دیده شود.
+    */
+    public function approvedComments()
+    {
+        return $this->hasMany(AdRating::class)
+            ->approvedComments()
+            ->with('user')
+            ->latest();
+    }
 
     /*
     | امتیازی که کاربرِ واردشده‌ی فعلی به این آگهی داده (اگر داده باشد).

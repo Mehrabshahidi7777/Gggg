@@ -51,6 +51,42 @@
                     آگهی‌ها
                 </a>
 
+                {{--
+                    شمارنده‌ی صف‌های بررسی. کوئری‌ها سبک‌اند (فقط COUNT
+                    روی ستون ایندکس‌شده) ولی چون در هر صفحه‌ی پنل اجرا
+                    می‌شوند، یک دقیقه کش می‌شوند.
+                --}}
+                @php
+                    $pendingEdits = \Illuminate\Support\Facades\Cache::remember(
+                        'admin.pending_ad_edits', now()->addMinute(),
+                        fn () => \App\Models\AdEdit::where('status', 'pending')->count()
+                    );
+                    $pendingComments = \Illuminate\Support\Facades\Cache::remember(
+                        'admin.pending_comments', now()->addMinute(),
+                        fn () => \App\Models\AdRating::where('comment_status', 'pending')->count()
+                    );
+                @endphp
+
+                <a
+                    href="{{ route('admin.ad-edits.index') }}"
+                    class="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-800"
+                >
+                    <span>ویرایش‌های آگهی</span>
+                    @if($pendingEdits)
+                        <span class="bg-amber-500 text-white text-xs font-black rounded-full px-2 py-0.5">{{ $pendingEdits }}</span>
+                    @endif
+                </a>
+
+                <a
+                    href="{{ route('admin.comments.index') }}"
+                    class="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-800"
+                >
+                    <span>نظرهای کاربران</span>
+                    @if($pendingComments)
+                        <span class="bg-amber-500 text-white text-xs font-black rounded-full px-2 py-0.5">{{ $pendingComments }}</span>
+                    @endif
+                </a>
+
                 <a
                     href="{{ route('admin.orders.index') }}"
                     class="block p-2 rounded hover:bg-gray-800"

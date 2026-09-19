@@ -21,7 +21,8 @@
     | myRating در کوئری‌های فهرست با scopeWithRatingSummary از قبل
     | eager load شده است، پس اینجا کوئری اضافه‌ای زده نمی‌شود.
     */
-    $mine = auth()->check() ? $ad->myRating?->rating : null;
+    $myRatingRow = auth()->check() ? $ad->myRating : null;
+    $mine = $myRatingRow?->rating;
 
     $widgetId = 'rate-' . $ad->id . '-' . $size;
 @endphp
@@ -93,11 +94,50 @@
             </p>
 
             @if($size === 'full')
+
                 <div class="star-rate__legend">
                     @foreach($labels as $value => $label)
                         <span><b>{{ $value }}</b> {{ $label }}</span>
                     @endforeach
                 </div>
+
+                {{--
+                    نظر متنی فقط روی صفحه‌ی خودِ آگهی گرفته می‌شود، نه
+                    روی کارت‌های فهرست. ستاره فوری اعمال می‌شود ولی متن
+                    تا تأیید مدیر منتشر نمی‌شود، و وضعیتش همین‌جا به
+                    نویسنده اعلام می‌شود.
+                --}}
+                <div class="comment-box">
+
+                    <label for="comment-{{ $ad->id }}" class="comment-box__label">
+                        نظر شما درباره این آگهی (اختیاری)
+                    </label>
+
+                    <textarea
+                        id="comment-{{ $ad->id }}"
+                        name="comment"
+                        rows="3"
+                        maxlength="1000"
+                        placeholder="تجربه‌تان از این {{ $ad->type === 'service' ? 'خدمت' : 'محصول' }} را بنویسید…"
+                    >{{ $myRatingRow?->comment }}</textarea>
+
+                    <div class="comment-box__foot">
+                        <span class="comment-box__note">
+                            نظر شما پس از تأیید مدیر نمایش داده می‌شود.
+                        </span>
+                        <button type="submit" class="btn btn-navy btn-sm" data-comment-submit>
+                            ثبت نظر
+                        </button>
+                    </div>
+
+                    @if($myRatingRow?->comment_status)
+                        <p class="comment-box__status comment-box__status--{{ $myRatingRow->comment_status }}">
+                            {{ $myRatingRow->commentStatusText() }}
+                        </p>
+                    @endif
+
+                </div>
+
             @endif
 
             {{-- اگر جاوااسکریپت غیرفعال باشد، فرم به‌صورت معمولی ارسال می‌شود. --}}

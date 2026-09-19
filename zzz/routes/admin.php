@@ -13,6 +13,8 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\SalesController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\AdEditController;
+use App\Http\Controllers\Admin\CommentController;
 
 Route::prefix(config('admin.prefix'))
     ->middleware(['auth', 'admin'])
@@ -41,6 +43,37 @@ Route::prefix(config('admin.prefix'))
 
         Route::post('/ads/{ad}/feature', [AdController::class, 'feature'])
             ->name('ads.feature');
+
+
+        /*
+        | درخواست‌های ویرایش آگهی از سمت ارائه‌دهنده
+        */
+
+        Route::get('/ad-edits', [AdEditController::class, 'index'])
+            ->name('ad-edits.index');
+
+        Route::get('/ad-edits/{adEdit}', [AdEditController::class, 'show'])
+            ->name('ad-edits.show');
+
+        Route::post('/ad-edits/{adEdit}/approve', [AdEditController::class, 'approve'])
+            ->name('ad-edits.approve');
+
+        Route::post('/ad-edits/{adEdit}/reject', [AdEditController::class, 'reject'])
+            ->name('ad-edits.reject');
+
+
+        /*
+        | نظرهای کاربران روی آگهی‌ها
+        */
+
+        Route::get('/comments', [CommentController::class, 'index'])
+            ->name('comments.index');
+
+        Route::post('/comments/{comment}/approve', [CommentController::class, 'approve'])
+            ->name('comments.approve');
+
+        Route::post('/comments/{comment}/reject', [CommentController::class, 'reject'])
+            ->name('comments.reject');
 
         Route::resource('users', UserController::class);
 

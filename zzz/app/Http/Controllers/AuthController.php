@@ -69,10 +69,16 @@ class AuthController extends Controller {
         Auth::login($user,true);$request->session()->forget(['mobile_auth_pending','mobile_auth_purpose','mobile_register_username']);$request->session()->regenerate();return redirect()->intended(route('home'))->with('success','با موفقیت وارد شدید.');
     }
     public function logout(Request $request){Auth::logout();$request->session()->invalidate();$request->session()->regenerateToken();return redirect()->route('home')->with('success','با موفقیت خارج شدید.');}
+    /*
+    | همان منطق قبلی، حالا از helper مشترک normalize_mobile() می‌آید.
+    |
+    | این تابع دو نسخه‌ی جداگانه داشت - یکی اینجا و یکی در helperها -
+    | که یعنی هر اصلاحی باید در دو جا انجام می‌شد. نسخه‌ی helper یک
+    | حالت مرزی را هم بهتر مدیریت می‌کند: شماره‌ی ده‌رقمی که با «98»
+    | شروع شود (مثل 9876543210) در نسخه‌ی قدیم به اشتباه پیش‌شماره‌ی
+    | کشور تلقی و بریده می‌شد.
+    */
     private function normalizeMobile(string $mobile): string {
-        $mobile=strtr($mobile,['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9','٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9']);
-        $mobile=preg_replace('/\D+/','',$mobile) ?: '';
-        if(Str::startsWith($mobile,'0098'))$mobile='0'.substr($mobile,4);elseif(Str::startsWith($mobile,'98'))$mobile='0'.substr($mobile,2);elseif(strlen($mobile)===10 && Str::startsWith($mobile,'9'))$mobile='0'.$mobile;
-        return $mobile;
+        return (string) normalize_mobile($mobile);
     }
 }

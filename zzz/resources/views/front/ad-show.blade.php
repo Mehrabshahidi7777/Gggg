@@ -258,10 +258,45 @@
     </div>
 </section>
 
+{{--
+    نظرهای کاربران.
+
+    فقط نظرهایی که مدیر تأیید کرده نمایش داده می‌شوند — رابطه‌ی
+    approvedComments خودش این فیلتر را دارد، پس نظر تأییدنشده حتی
+    اگر اشتباهی هم صدا زده شود اینجا دیده نمی‌شود.
+--}}
+@if($ad->approvedComments->count())
+<section class="section section--tight">
+    <div class="container">
+        <div class="section-head">
+            <h2>نظر کاربران درباره این آگهی</h2>
+        </div>
+
+        <div class="sz-grid sz-grid-2">
+            @foreach($ad->approvedComments->take(6) as $comment)
+                <div class="corner-card" style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+                        <strong>{{ $comment->user?->username ?: ($comment->user?->name ?? 'کاربر') }}</strong>
+                        <span style="color:var(--color-orange);letter-spacing:2px;" title="{{ \App\Models\AdRating::labelFor($comment->rating) }}">
+                            {{ str_repeat('★', $comment->rating) }}{{ str_repeat('☆', 5 - $comment->rating) }}
+                        </span>
+                    </div>
+                    <p style="color:var(--color-steel);line-height:1.8;margin-top:8px;white-space:pre-line;">{{ $comment->comment }}</p>
+                    <div style="font-size:.72rem;color:var(--color-steel-light);margin-top:8px;">
+                        {{ $comment->created_at->format('Y/m/d') }}
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
+{{-- نظرهای تأییدشده‌ی خریدهای آنلاین قبلی (سیستم قدیمی) --}}
 @if($ad->reviews->count())
 <section class="section section--tight">
     <div class="container">
-        <div class="section-head"><h2>نظر مشتریان درباره این آگهی</h2></div>
+        <div class="section-head"><h2>نظر خریداران پیشین</h2></div>
         <div class="sz-grid sz-grid-2">
             @foreach($ad->reviews->take(4) as $review)
                 <div class="corner-card" style="padding:18px;"><div style="display:flex;justify-content:space-between;gap:8px;"><strong>{{ $review->buyer?->username ?: ($review->buyer?->name ?? 'مشتری') }}</strong><span style="color:var(--color-orange);letter-spacing:2px;">{{ str_repeat('★',$review->rating) }}</span></div>@if($review->comment)<p style="color:var(--color-steel);line-height:1.8;margin-top:8px;">{{ $review->comment }}</p>@endif</div>

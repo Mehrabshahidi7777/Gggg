@@ -49,29 +49,74 @@ class AdRatingController extends Controller
         $data = $request->validate(
             [
                 'rating' => ['required', 'integer', 'between:1,5'],
+                'comment' => ['nullable', 'string', 'max:1000'],
             ],
             [
                 'rating.required' => 'یک امتیاز از ۱ تا ۵ ستاره انتخاب کنید.',
                 'rating.between' => 'امتیاز باید بین ۱ تا ۵ ستاره باشد.',
+                'comment.max' => 'متن نظر حداکثر ۱۰۰۰ نویسه می‌تواند باشد.',
             ]
         );
 
-        AdRating::updateOrCreate(
+        $comment = trim((string) ($data['comment'] ?? ''));
+
+        $existing = AdRating::where('ad_id', $ad->id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        $attributes = ['rating' => $data['rating']];
+
+        /*
+        |--------------------------------------------------------------------------
+        | نظر متنی
+        |--------------------------------------------------------------------------
+        |
+        | ستاره بلافاصله در میانگین اعمال می‌شود، اما متن تا تأیید
+        | مدیر روی صفحه دیده نمی‌شود.
+        |
+        | نکته: اگر کاربر متنِ قبلاً تأییدشده‌اش را ویرایش کند، دوباره
+        | به صف بررسی می‌رود. در غیر این صورت می‌شد یک متن بی‌خطر
+        | نوشت، تأیید گرفت و بعد محتوایش را عوض کرد - همان حفره‌ای که
+        | در ویرایش آگهی هم بسته شده است.
+        */
+        if ($comment !== '') {
+
+            $changed = ! $existing || trim((string) $existing->comment) !== $comment;
+
+            $attributes['comment'] = $comment;
+
+            if ($changed) {
+                $attributes['comment_status'] = 'pending';
+                $attributes['comment_rejection_reason'] = null;
+                $attributes['comment_reviewed_by'] = null;
+                $attributes['comment_reviewed_at'] = null;
+            }
+
+        } elseif ($existing && $existing->comment) {
+
+            // کاربر متنش را پاک کرده: نظر حذف می‌شود ولی امتیاز می‌ماند
+            $attributes['comment'] = null;
+            $attributes['comment_status'] = null;
+            $attributes['comment_rejection_reason'] = null;
+            $attributes['comment_reviewed_by'] = null;
+            $attributes['comment_reviewed_at'] = null;
+        }
+
+        $rating = AdRating::updateOrCreate(
             [
                 'ad_id' => $ad->id,
                 'user_id' => $request->user()->id,
             ],
-            [
-                'rating' => $data['rating'],
-            ]
+            $attributes
         );
 
-        return $this->respond(
-            $request,
-            $ad,
-            true,
-            'امتیاز شما ثبت شد: ' . AdRating::labelFor($data['rating'])
-        );
+        $message = 'امتیاز شما ثبت شد: ' . AdRating::labelFor($data['rating']);
+
+        if ($rating->comment_status === 'pending') {
+            $message .= ' — نظر شما ثبت شد و پس از تأیید مدیر نمایش داده می‌شود.';
+        }
+
+        return $this->respond($request, $ad, true, $message);
     }
 
     /*

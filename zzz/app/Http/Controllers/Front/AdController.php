@@ -338,7 +338,8 @@ class AdController extends Controller
                 'province',
                 'city',
                 'images',
-                'reviews.buyer'
+                'reviews.buyer',
+                'approvedComments',
             ])
             ->withRatingSummary()
             ->where(

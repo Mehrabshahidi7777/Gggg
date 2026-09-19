@@ -354,12 +354,15 @@
 
           paint(group, Number(form.querySelector('input[name="rating"]:checked')?.value || 0));
 
-          form.addEventListener('change',async e=>{
+          const commentField=form.querySelector('textarea[name="comment"]');
+          const commentButton=form.querySelector('[data-comment-submit]');
 
-          if(e.target.name!=='rating') return;
+          const send=async(value)=>{
 
-          const value=Number(e.target.value);
-          paint(group,value);
+          if(!value){
+          if(live){live.textContent='اول یک ستاره انتخاب کنید.';live.classList.add('is-error');}
+          return;
+          }
 
           if(live){
           live.textContent='در حال ثبت…';
@@ -375,7 +378,11 @@
           'Content-Type':'application/json',
           'X-Requested-With':'XMLHttpRequest'
           },
-          body:JSON.stringify({rating:value})
+          body:JSON.stringify({
+          rating:value,
+          // فیلد نظر فقط روی صفحه‌ی خود آگهی وجود دارد
+          comment:commentField?commentField.value:null
+          })
           });
 
           const data=await response.json().catch(()=>({}));
@@ -389,7 +396,8 @@
           }
 
           if(live){
-          live.textContent='امتیاز شما ثبت شد: '+(LABELS[value]||'');
+          // پیام سرور خودش می‌گوید نظر در انتظار تأیید است یا نه
+          live.textContent=data.message||('امتیاز شما ثبت شد: '+(LABELS[value]||''));
           live.classList.add('is-saved');
           }
 
@@ -404,7 +412,30 @@
           live.classList.add('is-error');
           }
           }
+          };
+
+          const selected=()=>Number(form.querySelector('input[name="rating"]:checked')?.value||0);
+
+          // انتخاب ستاره: بلافاصله ارسال می‌شود
+          form.addEventListener('change',e=>{
+          if(e.target.name!=='rating') return;
+          const value=Number(e.target.value);
+          paint(group,value);
+          send(value);
           });
+
+          // دکمه‌ی «ثبت نظر»: متن را با همان امتیاز انتخاب‌شده می‌فرستد
+          commentButton?.addEventListener('click',e=>{
+          e.preventDefault();
+          send(selected());
+          });
+
+          // جلوگیری از ارسال معمولی فرم وقتی جاوااسکریپت فعال است
+          form.addEventListener('submit',e=>{
+          e.preventDefault();
+          send(selected());
+          });
+
           });
 
           });

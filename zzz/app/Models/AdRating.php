@@ -10,10 +10,16 @@ class AdRating extends Model
         'ad_id',
         'user_id',
         'rating',
+        'comment',
+        'comment_status',
+        'comment_rejection_reason',
+        'comment_reviewed_by',
+        'comment_reviewed_at',
     ];
 
     protected $casts = [
         'rating' => 'integer',
+        'comment_reviewed_at' => 'datetime',
     ];
 
     /*
@@ -48,5 +54,33 @@ class AdRating extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function commentReviewer()
+    {
+        return $this->belongsTo(User::class, 'comment_reviewed_by');
+    }
+
+    /*
+    | فقط نظرهایی که ادمین تأیید کرده روی صفحه‌ی آگهی دیده می‌شوند.
+    */
+    public function scopeApprovedComments($q)
+    {
+        return $q->where('comment_status', 'approved')->whereNotNull('comment');
+    }
+
+    /*
+    | متن وضعیت، برای نمایش به خودِ نویسنده‌ی نظر.
+    */
+    public function commentStatusText(): string
+    {
+        return match ($this->comment_status) {
+            'pending' => 'نظر شما ثبت شد و پس از تأیید مدیر نمایش داده می‌شود.',
+            'approved' => 'نظر شما تأیید شده و روی این صفحه نمایش داده می‌شود.',
+            'rejected' => $this->comment_rejection_reason
+                ? 'نظر شما تأیید نشد: ' . $this->comment_rejection_reason
+                : 'نظر شما تأیید نشد.',
+            default => '',
+        };
     }
 }

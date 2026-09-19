@@ -723,3 +723,26 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 
 .contact-reveal__value { display: inline-block; text-decoration: none; }
 .contact-reveal__value:hover { text-decoration: underline; }
+
+/* --- کادر نظر کاربر (زیر ستاره‌ها در صفحه‌ی آگهی) --- */
+
+.comment-box { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--color-line); }
+.comment-box__label { display: block; font-size: .8rem; font-weight: 800; color: var(--color-ink); margin-bottom: 6px; }
+.comment-box textarea {
+  width: 100%; padding: 11px 13px; line-height: 1.8;
+  border: 1.5px solid var(--color-line); border-radius: var(--radius-sm);
+  background: #fff; resize: vertical; font-size: .9rem;
+}
+.comment-box textarea:focus { border-color: var(--color-blueprint); outline: none; }
+.comment-box__foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-top: 10px;
+}
+.comment-box__note { font-size: .74rem; color: var(--color-steel-light); }
+.comment-box__status {
+  margin: 10px 0 0; padding: 9px 12px; border-radius: var(--radius-sm);
+  font-size: .8rem; font-weight: 700; line-height: 1.7;
+}
+.comment-box__status--pending  { background: var(--color-amber-bg); color: var(--color-amber); }
+.comment-box__status--approved { background: var(--color-green-bg); color: var(--color-green); }
+.comment-box__status--rejected { background: var(--color-red-bg);   color: var(--color-red); }
