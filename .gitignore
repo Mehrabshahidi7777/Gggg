@@ -1,0 +1,11 @@
+/zzz/vendor
+/zzz/node_modules
+/zzz/.env
+/zzz/.env.*
+!/zzz/.env.example
+/zzz/storage/logs/*
+/zzz/storage/framework/cache/*
+/zzz/storage/framework/sessions/*
+/zzz/storage/framework/views/*
+/zzz/bootstrap/cache/*
+.DS_Store

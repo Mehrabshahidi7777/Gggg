@@ -1,0 +1,51 @@
+/* ==========================================================================
+   سازمت (Sazmet) — Design Tokens
+   Palette: "Blueprint" — inspired by architectural drawings & site plans
+   ========================================================================== */
+
+:root {
+  /* Color */
+  --color-ink: #0E2A47;          /* Ink Navy — headings, header, footer */
+  --color-ink-2: #123657;        /* Ink Navy, lighter step */
+  --color-blueprint: #2B6CB3;    /* Blueprint Blue — primary action / links */
+  --color-blueprint-dark: #1F5490;
+  --color-blueprint-tint: #EAF2FA; /* pale blue tint for backgrounds/badges */
+  --color-orange: #D9642B;         /* Site Orange — primary action / interactive accent */
+  --color-orange-dark: #B84F1E;
+  --color-orange-tint: #FCEAE0;    /* pale orange tint for selected/active states */
+  --color-steel: #4B5C70;        /* body text */
+  --color-steel-light: #7C8AA0;  /* secondary / muted text */
+  --color-paper: #F6F7F9;        /* page background */
+  --color-white: #FFFFFF;
+  --color-line: #E1E6EC;         /* borders, grid/ruler lines */
+  --color-line-strong: #C7D0DB;
+
+  /* Status (admin) */
+  --color-amber: #C8791E;
+  --color-amber-bg: #FCF1E1;
+  --color-green: #227A54;
+  --color-green-bg: #E7F5EE;
+  --color-red: #B23B2E;
+  --color-red-bg: #FBEAE7;
+
+  /* Typography */
+  --font-base: 'Vazirmatn', 'Inter', -apple-system, sans-serif;
+  --fs-base: 17px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(14, 42, 71, 0.07);
+  --shadow-md: 0 8px 24px rgba(14, 42, 71, 0.10);
+  --shadow-lg: 0 16px 48px rgba(14, 42, 71, 0.14);
+
+  /* Layout */
+  --container: 1240px;
+  --header-h: 76px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}

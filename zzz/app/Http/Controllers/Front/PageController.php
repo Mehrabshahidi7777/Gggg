@@ -1,0 +1,124 @@
+<?php
+
+namespace App\Http\Controllers\Front;
+
+use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Models\ContactMessage;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
+
+class PageController extends Controller
+{
+    public function about()
+    {
+        return view('front.about');
+    }
+
+    public function contact()
+    {
+        return view('front.contact');
+    }
+
+    public function contactStore(Request $r)
+    {
+        $data = $r->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'phone' => 'nullable|string|max:30',
+            'subject' => 'nullable|string|max:255',
+            'message' => 'required|string|max:5000',
+        ]);
+
+        ContactMessage::create($data);
+
+        return back()->with('success', 'پیام شما با موفقیت ارسال شد.');
+    }
+
+    /*
+    | تمام دسته‌بندی‌های فعال سایت (بدون محدودیت ۸ تایی صفحه اصلی)
+    */
+    public function categories()
+    {
+        $productCategories = Category::where('type', 'product')
+            ->where('is_active', true)
+            ->withCount([
+                'ads' => function ($query) {
+                    $query->approved();
+                },
+            ])
+            ->orderBy('name')
+            ->get();
+
+        $serviceCategories = Category::where('type', 'service')
+            ->where('is_active', true)
+            ->withCount([
+                'ads' => function ($query) {
+                    $query->approved();
+                },
+            ])
+            ->orderBy('name')
+            ->get();
+
+        return view('front.categories', compact('productCategories', 'serviceCategories'));
+    }
+
+    public function profile()
+    {
+        /*
+        | کاربرهایی که با شماره موبایل ثبت‌نام/وارد شده‌اند، ایمیل ندارند
+        | و رمز عبورشان هم یک رشته‌ی تصادفی است که خودشان از آن خبر
+        | ندارند (چون همیشه با پیامک وارد می‌شوند). برای همین بخش
+        | «تغییر رمز عبور» برای این‌ها بی‌معنی است و نباید نشان داده شود.
+        */
+        $hasPasswordLogin = (bool) auth()->user()->email;
+
+        return view('front.profile', compact('hasPasswordLogin'));
+    }
+
+    /*
+    | فقط نام کاربری قابل تغییره — ایمیل و شماره موبایل فقط نمایشی هستن.
+    */
+    public function updateProfile(Request $r)
+    {
+        $data = $r->validate([
+            'username' => [
+                'required', 'string', 'min:3', 'max:50', 'alpha_dash',
+                'unique:users,username,' . auth()->id(),
+            ],
+        ]);
+
+        auth()->user()->update($data);
+
+        return back()->with('success', 'نام کاربری شما به‌روزرسانی شد.');
+    }
+
+    public function updatePassword(Request $r)
+    {
+        /*
+        | کاربرهایی که با موبایل وارد شده‌اند رمز عبور واقعی ندارند
+        | (یک مقدار تصادفی و ناشناخته موقع ثبت‌نام برایشان ساخته شده)،
+        | پس این عملیات برای آن‌ها معنی ندارد؛ حتی اگر کسی مستقیم به
+        | این آدرس درخواست بفرستد باید همینجا رد بشود.
+        */
+        if (! auth()->user()->email) {
+            return back()->withErrors([
+                'current_password' => 'حساب شما با شماره موبایل ساخته شده و رمز عبور ندارد.',
+            ]);
+        }
+
+        $data = $r->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'confirmed', Password::min(8)],
+        ]);
+
+        if (! Hash::check($data['current_password'], auth()->user()->password)) {
+            return back()->withErrors(['current_password' => 'رمز عبور فعلی اشتباه است.']);
+        }
+
+        auth()->user()->update(['password' => $data['password']]);
+
+        return back()->with('success', 'رمز عبور شما با موفقیت تغییر کرد.');
+    }
+}

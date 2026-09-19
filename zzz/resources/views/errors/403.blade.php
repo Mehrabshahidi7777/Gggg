@@ -1,0 +1,1 @@
+@extends('layouts.app') @section('content')<div class="max-w-xl mx-auto text-center py-24 px-4"><div class="text-7xl">🔒</div><h1 class="text-4xl font-black mt-4">دسترسی غیرمجاز</h1><p class="text-gray-500 mt-3">شما اجازه دسترسی به این بخش را ندارید.</p><a class="btn-primary inline-block mt-6" href="{{ route('home') }}">بازگشت به خانه</a></div>@endsection
