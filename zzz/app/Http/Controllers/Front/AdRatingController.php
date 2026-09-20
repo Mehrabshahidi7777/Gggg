@@ -113,7 +113,7 @@ class AdRatingController extends Controller
         $message = 'امتیاز شما ثبت شد: ' . AdRating::labelFor($data['rating']);
 
         if ($rating->comment_status === 'pending') {
-            $message .= ' — نظر شما ثبت شد و پس از تأیید مدیر نمایش داده می‌شود.';
+            $message .= ' — نظر شما ثبت شد و به‌زودی روی این صفحه نمایش داده می‌شود.';
         }
 
         return $this->respond($request, $ad, true, $message);

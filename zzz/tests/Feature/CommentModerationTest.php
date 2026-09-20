@@ -94,14 +94,15 @@ class CommentModerationTest extends TestCase
         $this->assertSame(1, $loaded->rating_count);
     }
 
-    public function test_user_is_told_the_comment_awaits_approval(): void
+    public function test_user_message_confirms_without_mentioning_moderation(): void
     {
         $response = $this->actingAs($this->visitor)->postJson(route('ad.rate', $this->ad), [
             'rating' => 5,
             'comment' => 'خیلی خوب بود',
         ])->assertOk();
 
-        $this->assertStringContainsString('پس از تأیید', $response->json('message'));
+        $this->assertStringContainsString('به‌زودی', $response->json('message'));
+        $this->assertStringNotContainsString('مدیر', $response->json('message'));
     }
 
     public function test_rating_without_a_comment_creates_no_moderation_item(): void
@@ -158,7 +159,9 @@ class CommentModerationTest extends TestCase
             ->get(route('ad.show', $this->ad->slug))
             ->assertOk()
             ->assertSee('متن-خودم', false)
-            ->assertSee('پس از تأیید مدیر نمایش داده می‌شود', false);
+            ->assertSee('به‌زودی روی این صفحه نمایش داده می‌شود', false)
+            // متن کاربر نباید حرفی از «مدیر» یا «تأیید» بزند
+            ->assertDontSee('تأیید مدیر', false);
     }
 
     public function test_approved_comment_is_shown_on_the_ad_page(): void
