@@ -229,7 +229,12 @@
             {{-- تصاویر فعلی --}}
             @if($ad->images->count())
                 <div class="field">
-                    <label>تصاویر فعلی — تیک بزنید تا حذف شوند</label>
+                    <label>تصاویر فعلی</label>
+                    <p class="hint" style="margin-bottom:10px;">
+                        برای حذف یک تصویر، روی خودِ تصویر یا نوشته‌ی زیرش بزنید.
+                        تصویرِ انتخاب‌شده کم‌رنگ و قرمز می‌شود. حذف پس از
+                        ثبت درخواست و تأیید انجام می‌شود.
+                    </p>
                     <div class="sz-grid sz-grid-4">
                         @foreach($ad->images as $image)
                             <label class="ad-edit-image">

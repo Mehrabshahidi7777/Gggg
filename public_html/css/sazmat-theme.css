@@ -419,17 +419,37 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 .field--wide { grid-column: 1 / -1; }
 
 /* کارت تصویر در فرم ویرایش آگهی */
+/* چک‌باکس و رادیو نباید قانون width:100% ورودی‌های فرم را بگیرند.
+   اندازه‌ی پیش‌فرض مرورگر ۱۳ پیکسل است؛ روی موبایل این یک‌چهارمِ
+   هدف لمسیِ قابل قبول است و زدنش واقعاً سخت. */
+.field input[type="checkbox"],
+.field input[type="radio"] {
+  width: 22px; height: 22px; flex: none; padding: 0;
+  accent-color: var(--color-red); cursor: pointer;
+}
+
 .ad-edit-image { cursor: pointer; display: block; }
 .ad-edit-image img {
   width: 100%; height: 110px; object-fit: cover;
   border-radius: var(--radius-sm); border: 2px solid var(--color-line);
+  transition: opacity .15s, border-color .15s;
 }
+
+/* کل ردیفِ زیر عکس هدف لمس است، نه فقط خودِ مربع کوچک. */
 .ad-edit-image span {
-  display: flex; align-items: center; gap: 6px;
-  margin-top: 6px; font-size: .8rem; font-weight: 600;
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 6px; font-size: .85rem; font-weight: 700;
+  min-height: 44px; padding: 0 4px;
+  color: var(--color-steel);
 }
-/* چک‌باکس نباید قانون width:100% ورودی‌های فرم را بگیرد */
-.ad-edit-image input[type="checkbox"] { width: auto; flex: none; }
+
+/* وقتی تیک خورد باید در یک نگاه معلوم باشد کدام عکس قرار است برود -
+   نه فقط یک مربع ۲۲ پیکسلی جایی پایین کادر. */
+.ad-edit-image:has(input:checked) img {
+  border-color: var(--color-red);
+  opacity: .45;
+}
+.ad-edit-image:has(input:checked) span { color: var(--color-red); }
 .radio-group { display: flex; gap: 12px; }
 .radio-card {
   flex: 1; border: 1.5px solid var(--color-line); border-radius: var(--radius-md); padding: 18px;
