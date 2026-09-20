@@ -244,9 +244,45 @@
                 </div>
             @endif
 
+            {{--
+                سقفِ این فرم «کل» نیست، «باقی‌مانده» است: هر ویرایش
+                تصویر را به تصاویرِ موجود اضافه می‌کند. پس عددی که به
+                کاربر نشان داده می‌شود هم باید همان باقی‌مانده باشد،
+                وگرنه ۱۰ تا انتخاب می‌کند و پیام خطا می‌گیرد.
+
+                تیک‌های حذف در این عدد حساب نمی‌شوند - آن‌ها فقط بعد
+                از ثبت اعمال می‌شوند. سمت سرور حساب کامل را می‌کند و
+                حرف آخر را می‌زند.
+            --}}
+            @php
+                $remainingImages = max(0, \App\Models\Ad::MAX_IMAGES - $ad->images->count());
+            @endphp
+
             <div class="field">
-                <label for="edit-images">افزودن تصویر جدید (حداکثر ۱۰ تصویر، هرکدام تا ۱۰ مگابایت)</label>
-                <input id="edit-images" type="file" name="images[]" accept="image/jpeg,image/png,image/webp" multiple>
+                <label for="edit-images">افزودن تصویر جدید</label>
+
+                <p class="hint" style="margin-bottom:10px;">
+                    @if($remainingImages > 0)
+                        این آگهی {{ $ad->images->count() }} تصویر دارد و تا سقف {{ \App\Models\Ad::MAX_IMAGES }} تصویر،
+                        <b>{{ $remainingImages }} تصویر دیگر</b> می‌توانید اضافه کنید. هرکدام تا ۱۰ مگابایت.
+                    @else
+                        این آگهی به سقف {{ \App\Models\Ad::MAX_IMAGES }} تصویر رسیده است.
+                        برای افزودن تصویر تازه، اول چند تصویر بالا را برای حذف تیک بزنید و ثبت کنید.
+                    @endif
+                </p>
+
+                <p class="hint" id="edit-images-note" style="margin-bottom:10px;"></p>
+
+                <input
+                    id="edit-images"
+                    type="file"
+                    name="images[]"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    data-max-images="{{ \App\Models\Ad::MAX_IMAGES }}"
+                    data-images-remaining="{{ $remainingImages }}"
+                    data-images-note="#edit-images-note"
+                >
             </div>
 
             <button class="btn btn-navy" type="submit" style="margin-top:26px;">ثبت درخواست ویرایش</button>

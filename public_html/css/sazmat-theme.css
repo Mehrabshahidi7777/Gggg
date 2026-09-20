@@ -370,8 +370,18 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 .detail-gallery-main { aspect-ratio: 16/11; background: var(--color-blueprint-tint); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
 .detail-gallery-main svg { width: 40%; color: var(--color-blueprint); }
 .detail-thumbs { display: flex; gap: 10px; }
-.detail-thumbs div { flex: 1; aspect-ratio: 1; background: #fff; border: 1.5px solid var(--color-line); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.detail-thumbs div.is-active { border-color: var(--color-orange); }
+/* بندانگشتی‌ها از <div> به <button> تغییر کردند تا با کیبورد هم کار
+   کنند؛ هر دو سلکتور نوشته شده تا اگر جایی هنوز div مانده باشد
+   ظاهرش نشکند. padding و رنگ پیش‌فرض دکمه هم باید صفر شود. */
+.detail-thumbs div,
+.detail-thumbs button { flex: 1; aspect-ratio: 1; background: #fff; border: 1.5px solid var(--color-line); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.detail-thumbs div.is-active,
+.detail-thumbs button.is-active { border-color: var(--color-orange); }
+
+/* روی لمس، حاشیه‌ی نارنجی تنها بازخورد است و کم است؛ تصویرِ انتخاب‌شده
+   کمی برجسته هم می‌شود تا کاربر مطمئن شود کلیکش گرفته. */
+.detail-thumbs button.is-active { box-shadow: 0 0 0 2px var(--color-orange); }
+.detail-thumbs button:focus-visible { outline: 2px solid var(--color-blueprint); outline-offset: 2px; }
 .detail-thumbs svg { width: 44%; color: var(--color-blueprint-tint); }
 .detail-side { position: sticky; top: calc(var(--header-h) + 24px); background: #fff; border: 1px solid var(--color-line); border-radius: var(--radius-lg); padding: 26px; }
 .provider-row { display: flex; align-items: center; gap: 14px; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--color-line); }
@@ -398,6 +408,8 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 .field { margin-bottom: 20px; }
 .field label { display: block; font-weight: 700; font-size: 0.92rem; color: var(--color-ink); margin-bottom: 8px; }
 .field .hint { font-size: 0.8rem; color: var(--color-steel-light); margin-top: 6px; }
+/* پیام خطای شمارش تصویر: باید در یک نگاه از راهنمای عادی جدا باشد. */
+.hint.is-error { color: var(--color-red); font-weight: 800; }
 .field textarea { min-height: 120px; resize: vertical; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 

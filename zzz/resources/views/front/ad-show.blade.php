@@ -102,16 +102,49 @@
         <div>
 
             @if($ad->images->count())
-                <div class="detail-gallery-main" id="detailMainImg"><img src="{{ Storage::url($ad->images->first()->path) }}" alt="{{ $ad->title }}" loading="eager"></div>
+
+                {{--
+                    عکس بزرگ یک <img> است، نه پس‌زمینه‌ی ظرف.
+
+                    کد قبلی با کلیک روی بندانگشتی،
+                    style.backgroundImage همین div را عوض می‌کرد - در
+                    حالی که .detail-gallery-main img در CSS عرض و
+                    ارتفاع ۱۰۰٪ با object-fit:cover دارد و کل ظرف را
+                    می‌پوشاند. یعنی پس‌زمینه هیچ‌وقت دیده نمی‌شد و
+                    عکس هرگز عوض نمی‌شد؛ فقط حاشیه‌ی نارنجیِ
+                    بندانگشتی جابه‌جا می‌شد.
+
+                    حالا خودِ src عوض می‌شود.
+                --}}
+                <div class="detail-gallery-main">
+                    <img
+                        id="detailMainImg"
+                        src="{{ Storage::url($ad->images->first()->path) }}"
+                        alt="{{ $ad->title }}"
+                        loading="eager"
+                    >
+                </div>
 
                 @if($ad->images->count() > 1)
-                    <div class="detail-thumbs">
+                    {{--
+                        بندانگشتی‌ها <button> هستند نه <div>، تا با
+                        کیبورد و صفحه‌خوان هم کار کنند.
+
+                        آدرس عکس در data-full می‌نشیند و یک شنونده‌ی
+                        واحد پایین صفحه آن را برمی‌دارد. قبلاً آدرس
+                        داخل یک onclick و درون template literal
+                        چسبانده می‌شد؛ هر آپاستروف یا بک‌تیک در مسیر
+                        فایل کل اسکریپت را می‌شکست.
+                    --}}
+                    <div class="detail-thumbs" data-gallery>
                         @foreach($ad->images as $img)
-                            <div
+                            <button
+                                type="button"
                                 class="{{ $loop->first ? 'is-active' : '' }}"
                                 style="background-image:url('{{ Storage::url($img->path) }}');background-size:cover;background-position:center;"
-                                onclick="document.getElementById('detailMainImg').style.backgroundImage=`url({{ Storage::url($img->path) }})`;document.querySelectorAll('.detail-thumbs div').forEach(d=>d.classList.remove('is-active'));this.classList.add('is-active');"
-                            ></div>
+                                data-full="{{ Storage::url($img->path) }}"
+                                aria-label="نمایش تصویر {{ $loop->iteration }} از {{ $ad->images->count() }}"
+                            ></button>
                         @endforeach
                     </div>
                 @endif
@@ -325,3 +358,35 @@
 @endif
 
 @endsection
+
+@push('scripts')
+<script>
+/*
+| گالری تصاویر آگهی.
+|
+| یک شنونده روی ظرف، نه یکی به‌ازای هر بندانگشتی.
+*/
+(function () {
+    const gallery = document.querySelector('[data-gallery]');
+    const main = document.getElementById('detailMainImg');
+
+    if (! gallery || ! main) {
+        return;
+    }
+
+    gallery.addEventListener('click', function (event) {
+
+        const thumb = event.target.closest('button[data-full]');
+
+        if (! thumb) {
+            return;
+        }
+
+        main.src = thumb.dataset.full;
+
+        gallery.querySelectorAll('button').forEach(b => b.classList.remove('is-active'));
+        thumb.classList.add('is-active');
+    });
+})();
+</script>
+@endpush

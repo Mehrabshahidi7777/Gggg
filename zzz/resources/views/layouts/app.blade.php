@@ -274,6 +274,49 @@
           @stack('scripts')
 
           <script>
+          /*
+          | سقف تعداد تصویر، همان‌جا در مرورگر.
+          |
+          | اعتبارسنجی سمت سرور از قبل هست و حرف آخر را می‌زند، ولی
+          | تا وقتی فقط آنجا باشد، کاربر بیست فایل را آپلود می‌کند،
+          | منتظر می‌ماند، و بعد پیام خطا می‌گیرد. این بررسی پیش از
+          | ارسال جلویش را می‌گیرد.
+          |
+          | هر ورودی فایلی که data-max-images داشته باشد خودکار تحت
+          | پوشش است. data-images-remaining برای فرم ویرایش است، که
+          | سقفش «باقی‌مانده» است نه «کل».
+          */
+          (function () {
+          document.querySelectorAll('input[type="file"][data-max-images]').forEach(function (input) {
+
+          const note = document.querySelector(input.dataset.imagesNote || '');
+
+          input.addEventListener('change', function () {
+
+          const max = parseInt(input.dataset.imagesRemaining ?? input.dataset.maxImages, 10);
+          const picked = input.files ? input.files.length : 0;
+
+          if (! note) { return; }
+
+          if (picked > max) {
+          note.textContent = max > 0
+          ? 'فقط ' + max + ' تصویر دیگر می‌توانید اضافه کنید، ولی ' + picked + ' تا انتخاب کرده‌اید. چند تا را کم کنید.'
+          : 'این آگهی به سقف تصاویر رسیده است. برای افزودن تصویر تازه، اول چند تصویر قبلی را برای حذف تیک بزنید.';
+          note.classList.add('is-error');
+          input.value = '';
+          return;
+          }
+
+          note.classList.remove('is-error');
+          note.textContent = picked === 0
+          ? ''
+          : picked + ' تصویر انتخاب شد.';
+          });
+          });
+          })();
+          </script>
+
+          <script>
           (function(){
           const faDigits='۰۱۲۳۴۵۶۷۸۹',arDigits='٠١٢٣٤٥٦٧٨٩';
           window.sazmatDigitsOnly=function(el,maxLen,allowPlus){
