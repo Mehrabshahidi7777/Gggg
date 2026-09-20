@@ -109,6 +109,18 @@
                 --}}
                 <div class="comment-box">
 
+                    {{--
+                        وضعیت نظر بالای کادر و درشت است، نه یک یادداشت
+                        ریزِ زیر آن. کاربر باید همان لحظه‌ی ورود به
+                        صفحه ببیند نظرش در چه مرحله‌ای است، نه اینکه
+                        دنبال یک خط کوچک بگردد.
+                    --}}
+                    <p
+                        class="comment-box__status{{ $myRatingRow?->comment_status ? ' comment-box__status--' . $myRatingRow->comment_status : '' }}"
+                        data-comment-status
+                        @if(! $myRatingRow?->comment_status) hidden @endif
+                    >{{ $myRatingRow?->comment_status ? $myRatingRow->commentStatusText() : '' }}</p>
+
                     <label for="comment-{{ $ad->id }}" class="comment-box__label">
                         نظر شما درباره این آگهی (اختیاری)
                     </label>
@@ -122,19 +134,10 @@
                     >{{ $myRatingRow?->comment }}</textarea>
 
                     <div class="comment-box__foot">
-                        <span class="comment-box__note">
-                            نظر شما پس از تأیید مدیر نمایش داده می‌شود.
-                        </span>
                         <button type="submit" class="btn btn-navy btn-sm" data-comment-submit>
                             ثبت نظر
                         </button>
                     </div>
-
-                    @if($myRatingRow?->comment_status)
-                        <p class="comment-box__status comment-box__status--{{ $myRatingRow->comment_status }}">
-                            {{ $myRatingRow->commentStatusText() }}
-                        </p>
-                    @endif
 
                 </div>
 

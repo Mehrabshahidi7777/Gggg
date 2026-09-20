@@ -621,13 +621,34 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 
 /* --- حالت انتخاب‌پذیر --- */
 
-.star-rate__star { cursor: pointer; display: inline-flex; }
+/* position:relative لازم است.
+   بدون آن، ورودیِ رادیویِ position:absolute از دل label بیرون می‌زند
+   و به نزدیک‌ترین جدِ موقعیت‌دار می‌چسبد؛ نتیجه‌اش این است که
+   محدوده‌ی کلیکِ ستاره از خودِ ستاره جابه‌جا می‌شود و کاربر مجبور
+   می‌شود کنارِ ستاره را بزند.
+
+   padding هم محدوده‌ی لمس را بزرگ‌تر می‌کند: روی موبایل زدن روی یک
+   گلیف باریکِ ★ سخت است. */
+.star-rate__star {
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 3px;
+  touch-action: manipulation;          /* حذف تأخیر ۳۰۰ms دابل‌تپ */
+  -webkit-tap-highlight-color: transparent;
+}
+
 .star-rate__star input {
   position: absolute;
+  inset: 0;
   opacity: 0;
-  width: 1px;
-  height: 1px;
-  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  /* pointer-events روشن می‌ماند تا خودِ ورودی هم هدف لمس باشد */
 }
 
 /* ستاره‌ی انتخاب‌شده و همه‌ی ستاره‌های سمت چپِ آن پر می‌شوند.
@@ -638,14 +659,24 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 .star-rate__star:has(~ .star-rate__star input:checked) .star,
 .star-rate__star .star.is-on { color: var(--color-orange); }
 
-/* پیش‌نمایش با هاور: خود ستاره و هرچه سمت چپش است پر می‌شود.
-   این قانون‌ها بعد از قانون‌های بالا می‌آیند تا موقع هاور بر انتخاب
-   فعلی غلبه کنند. */
-.star-rate__stars:hover .star,
-.star-rate__stars:hover .star.is-on { color: var(--color-line-strong); }
-.star-rate__star:hover .star,
-.star-rate__star:has(~ .star-rate__star:hover) .star { color: var(--color-orange); }
-.star-rate__star:hover .star { transform: scale(1.12); }
+/* پیش‌نمایش با هاور — فقط روی دستگاه‌هایی که واقعاً ماوس دارند.
+   ------------------------------------------------------------------
+   این قانون‌ها عمداً داخل @media (hover: hover) هستند.
+
+   روی صفحه‌ی لمسی، :hover بعد از تپ روی همان عنصر «می‌ماند». بدون
+   این محافظ، قانونِ خاکستری‌کردنِ زیر بعد از هر تپ روی انتخاب کاربر
+   غلبه می‌کرد و ستاره‌ای که تازه انتخاب شده بود خاموش به نظر
+   می‌رسید — دقیقاً همان رفتاری که روی موبایل دیده می‌شد. */
+@media (hover: hover) and (pointer: fine) {
+  .star-rate__stars:hover .star,
+  .star-rate__stars:hover .star.is-on { color: var(--color-line-strong); }
+  .star-rate__star:hover .star,
+  .star-rate__star:has(~ .star-rate__star:hover) .star { color: var(--color-orange); }
+  .star-rate__star:hover .star { transform: scale(1.12); }
+}
+
+/* بازخورد لمسی: لحظه‌ی فشردن، ستاره کمی بزرگ می‌شود. */
+.star-rate__star:active .star { transform: scale(1.2); }
 
 .star-rate__star input:focus-visible ~ .star {
   outline: 2px solid var(--color-blueprint);
@@ -681,8 +712,17 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 /* --- اندازه‌ها --- */
 
 .star-rate--compact { gap: 4px; padding: 10px 16px 12px; border-top: 1px solid var(--color-line); }
-.star-rate--compact .star { font-size: 1.05rem; }
-.star-rate--compact .star-rate__scale { max-width: 126px; }
+.star-rate--compact .star { font-size: 1.15rem; }
+.star-rate--compact .star-rate__scale { max-width: 140px; }
+
+/* روی موبایل ستاره‌ها بزرگ‌تر می‌شوند تا هدف لمس راحت باشد. */
+@media (max-width: 640px) {
+  .star-rate__star { padding: 8px 5px; }
+  .star-rate--compact .star { font-size: 1.45rem; }
+  .star-rate--full .star { font-size: 2.1rem; }
+  .star-rate--compact .star-rate__scale { max-width: 180px; }
+  .star-rate--full .star-rate__scale { max-width: 260px; }
+}
 
 .star-rate--full {
   gap: 8px; padding: 18px;
@@ -738,11 +778,19 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; flex-wrap: wrap; margin-top: 10px;
 }
-.comment-box__note { font-size: .74rem; color: var(--color-steel-light); }
+/* وضعیت نظر: بالای کادر، درشت و قابل دیدن از یک نگاه. */
 .comment-box__status {
-  margin: 10px 0 0; padding: 9px 12px; border-radius: var(--radius-sm);
-  font-size: .8rem; font-weight: 700; line-height: 1.7;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border-inline-start: 4px solid currentColor;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.8;
+  background: var(--color-green-bg);
+  color: var(--color-green);
 }
+.comment-box__status[hidden] { display: none; }
 .comment-box__status--pending  { background: var(--color-amber-bg); color: var(--color-amber); }
 .comment-box__status--approved { background: var(--color-green-bg); color: var(--color-green); }
 .comment-box__status--rejected { background: var(--color-red-bg);   color: var(--color-red); }

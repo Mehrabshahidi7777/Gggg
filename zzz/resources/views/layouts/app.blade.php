@@ -356,6 +356,7 @@
 
           const commentField=form.querySelector('textarea[name="comment"]');
           const commentButton=form.querySelector('[data-comment-submit]');
+          const status=form.querySelector('[data-comment-status]');
 
           const send=async(value)=>{
 
@@ -395,10 +396,28 @@
           return;
           }
 
+          /*
+          پیام ستاره و پیام نظر جدا نگه داشته می‌شوند:
+          - خط ریزِ زیر ستاره‌ها فقط امتیاز را اعلام می‌کند
+          - کادر درشتِ بالای فیلد نظر، وضعیت نظر را می‌گوید
+          سرور هر دو را در یک رشته می‌فرستد و با «—» جدا کرده است.
+          */
+          const parts=String(data.message||'').split('—');
+
           if(live){
-          // پیام سرور خودش می‌گوید نظر در انتظار تأیید است یا نه
-          live.textContent=data.message||('امتیاز شما ثبت شد: '+(LABELS[value]||''));
+          live.textContent=(parts[0]||('امتیاز شما ثبت شد: '+(LABELS[value]||''))).trim();
           live.classList.add('is-saved');
+          }
+
+          if(status){
+          if(parts.length>1){
+          status.textContent=parts.slice(1).join('—').trim();
+          status.className='comment-box__status comment-box__status--pending';
+          status.hidden=false;
+          }else if(!commentField||!commentField.value.trim()){
+          // نظری فرستاده نشده؛ کادر وضعیت پنهان می‌ماند
+          status.hidden=true;
+          }
           }
 
           if(summary&&data.count){
@@ -422,6 +441,26 @@
           const value=Number(e.target.value);
           paint(group,value);
           send(value);
+          });
+
+          /*
+          روی بعضی مرورگرهای موبایل، تپ روی <label> همیشه به ورودیِ
+          رادیویی داخلش نمی‌رسد و رویداد change شلیک نمی‌شود. این
+          هندلر مستقیماً روی خود ستاره می‌نشیند و انتخاب را دستی
+          انجام می‌دهد، پس تپ همیشه کار می‌کند.
+          */
+          group?.querySelectorAll('.star-rate__star').forEach(label=>{
+          label.addEventListener('click',e=>{
+
+          const input=label.querySelector('input[name="rating"]');
+          if(!input||input.checked) return;
+
+          // جلوگیری از اجرای دوباره وقتی مرورگر خودش هم change می‌زند
+          e.preventDefault();
+
+          input.checked=true;
+          input.dispatchEvent(new Event('change',{bubbles:true}));
+          });
           });
 
           // دکمه‌ی «ثبت نظر»: متن را با همان امتیاز انتخاب‌شده می‌فرستد
