@@ -7,21 +7,21 @@
   /* Color */
   --color-ink: #0E2A47;          /* Ink Navy — headings, header, footer */
   --color-ink-2: #123657;        /* Ink Navy, lighter step */
-  --color-blueprint: #2B6CB3;    /* Blueprint Blue — primary action / links */
+  --color-blueprint: #2B6CB3;    /* Blueprint Blue — links and secondary actions */
   --color-blueprint-dark: #1F5490;
   --color-blueprint-tint: #EAF2FA; /* pale blue tint for backgrounds/badges */
-  --color-orange: #D9642B;         /* Site Orange — primary action / interactive accent */
-  --color-orange-dark: #B84F1E;
+  --color-orange: #BF5522;         /* Site Orange — THE primary action. See note below. */
+  --color-orange-dark: #A5491D;
   --color-orange-tint: #FCEAE0;    /* pale orange tint for selected/active states */
   --color-steel: #4B5C70;        /* body text */
-  --color-steel-light: #7C8AA0;  /* secondary / muted text */
+  --color-steel-light: #637188;  /* secondary / muted text */
   --color-paper: #F6F7F9;        /* page background */
   --color-white: #FFFFFF;
   --color-line: #E1E6EC;         /* borders, grid/ruler lines */
   --color-line-strong: #C7D0DB;
 
   /* Status (admin) */
-  --color-amber: #C8791E;
+  --color-amber: #9D5F18;
   --color-amber-bg: #FCF1E1;
   --color-green: #227A54;
   --color-green-bg: #E7F5EE;
@@ -49,3 +49,41 @@
   /* Motion */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* --------------------------------------------------------------------------
+   یادداشت روی رنگ‌ها — چرا سه عدد عوض شدند
+   --------------------------------------------------------------------------
+
+   سه رنگ زیر حد خوانایی WCAG AA (نسبت ۴.۵) بودند. هیو و اشباعشان دست
+   نخورد؛ فقط روشنایی یک پله کم شد تا از فاصله‌ی معمولی همان رنگ به نظر
+   برسند ولی خوانا شوند:
+
+       --color-orange       #D9642B → #BF5522    ۳.۶۲ → ۴.۶۳
+       --color-steel-light  #7C8AA0 → #637188    ۳.۲۷ → ۴.۶۱
+       --color-amber        #C8791E → #9D5F18    ۳.۰۳ → ۴.۶۱
+
+   نارنجی مهم‌ترینشان بود: هم به‌عنوان متن روی سفید استفاده می‌شود و هم
+   به‌عنوان دکمه با متن سفید، و هر دو جهت زیر حد بودند - یعنی مهم‌ترین
+   دکمه‌ی سایت («ثبت آگهی») خوانا نبود.
+
+   --color-orange-dark هم از #B84F1E به #A5491D رفت. با نارنجیِ تیره‌ترِ
+   جدید، پله‌ی قبلی آن‌قدر نزدیک شده بود که حالت hover عملاً دیده
+   نمی‌شد؛ حالا دوباره فاصله‌ی محسوسی دارد (نسبت ۵.۸۸).
+
+   --------------------------------------------------------------------------
+   یک قاعده، نه یک رنگ
+   --------------------------------------------------------------------------
+
+   قبلاً هم آبی و هم نارنجی در همین فایل «primary action» علامت خورده
+   بودند. وقتی دو رنگ هر دو «اقدام اصلی» باشند، چشم کاربر نمی‌داند کجا
+   برود.
+
+   قاعده از این به بعد:
+
+       نارنجی  →  فقط و فقط مهم‌ترین اقدام هر صفحه (معمولاً «ثبت آگهی»)
+       آبی     →  لینک‌ها و اقدام‌های فرعی
+       سرمه‌ای →  عنوان‌ها، هدر، فوتر
+
+   این فایل رنگ‌ها را درست کرد؛ اعمال این قاعده روی دکمه‌های موجود کار
+   جداگانه‌ای است.
+   -------------------------------------------------------------------------- */
