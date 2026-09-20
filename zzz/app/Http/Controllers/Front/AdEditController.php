@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Front;
 use App\Http\Controllers\Controller;
 use App\Models\Ad;
 use App\Models\AdEdit;
+use App\Models\AdImage;
 use App\Models\Category;
 use App\Models\Province;
 use App\Services\ImageService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -205,13 +207,63 @@ class AdEditController extends Controller
             ];
         }
 
-        $validated = $request->validate($rules, [
+        $validator = Validator::make($request->all(), $rules, [
             'phone.regex' => 'شماره تلفن باید ۱۱ رقم و با ۰ شروع شود (مثال: 09121234567).',
             'address.max' => 'آدرس حداکثر ۲۵۵ نویسه می‌تواند باشد.',
             'category_id.exists' => 'دسته‌بندی انتخاب‌شده با نوع آگهی سازگار نیست.',
             'city_id.exists' => 'شهر انتخاب‌شده با استان سازگار نیست.',
             'card_number.digits' => 'شماره شبا باید ۲۴ رقم باشد (بدون IR).',
+            'images.max' => 'در هر بار حداکثر ' . Ad::MAX_IMAGES . ' تصویر می‌توانید انتخاب کنید.',
+            'images.*.max' => 'حجم هر تصویر حداکثر ۱۰ مگابایت است.',
         ]);
+
+        /*
+        |----------------------------------------------------------------------
+        | سقف تصاویرِ خودِ آگهی، نه فقط سقف هر بار آپلود
+        |----------------------------------------------------------------------
+        |
+        | قانون images|max بالا فقط می‌گوید «در این درخواست بیشتر از ۱۰
+        | فایل نفرست». ولی ویرایش، تصویر را به تصاویرِ موجود *اضافه*
+        | می‌کند. پس بدون بررسی زیر، کاربر می‌توانست آگهی را با ۱۰
+        | تصویر ثبت کند، بعد ۱۰ تا اضافه کند، بعد ۱۰ تای دیگر - و
+        | همین‌طور بی‌انتها. هر فایل هم تا ۱۰ مگابایت.
+        |
+        | حساب درست این است: آنچه الان هست، منهای آنچه در همین درخواست
+        | حذف می‌شود، به‌علاوه‌ی آنچه اضافه می‌شود.
+        |
+        | این بررسی عمداً اینجاست و نه بعد از آپلود: تا وقتی معتبر
+        | نباشد، هیچ فایلی روی دیسک نوشته نمی‌شود.
+        */
+        $validator->after(function ($validator) use ($request, $ad) {
+
+            $existing = $ad->images()->count();
+
+            /*
+            | فقط شناسه‌های یکتا و متعلق به همین آگهی شمرده می‌شوند،
+            | وگرنه فرستادن یک شناسه‌ی تکراری سقف را جعلی پایین می‌آورد.
+            */
+            $removing = AdImage::where('ad_id', $ad->id)
+                ->whereIn('id', array_unique(array_map(
+                    'intval',
+                    (array) $request->input('delete_images', [])
+                )))
+                ->count();
+
+            $adding = count($request->file('images', []));
+
+            $total = $existing - $removing + $adding;
+
+            if ($total > Ad::MAX_IMAGES) {
+                $validator->errors()->add('images', sprintf(
+                    'هر آگهی حداکثر %s تصویر می‌تواند داشته باشد. این آگهی الان %s تصویر دارد؛ با این تغییر %s تا می‌شود. برای افزودن تصویر تازه، اول چند تصویر قبلی را برای حذف تیک بزنید.',
+                    Ad::MAX_IMAGES,
+                    $existing,
+                    $total
+                ));
+            }
+        });
+
+        $validated = $validator->validate();
 
         // این‌ها فیلد آگهی نیستند و نباید وارد payload شوند
         unset($validated['images'], $validated['delete_images']);

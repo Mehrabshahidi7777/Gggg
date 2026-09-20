@@ -44,7 +44,7 @@ $rules=[
 // برای خدمت هم عملاً nullable باقی می‌ماند - یک باگ واقعی. با تعریف‌نکردن
 // اینجا و required-کردنش برای هر دو نوع پایین‌تر (هم طبق درخواست شما که
 // محصول هم مثل خدمت باشه)، هم آن باگ رفع شد هم خواسته‌ی جدید اعمال شد.
-'images'=>'nullable|array|max:10','images.*'=>'image|mimes:jpg,jpeg,png,webp|max:10240'
+'images'=>['nullable','array','max:'.\App\Models\Ad::MAX_IMAGES],'images.*'=>'image|mimes:jpg,jpeg,png,webp|max:10240'
 ];
 if($type==='product')$rules+=['phone'=>['required','regex:/^0[0-9]{10}$/'],'brand'=>'nullable|string|max:100','model'=>'nullable|string|max:100','condition'=>['nullable',Rule::in(['new','used'])],'card_number'=>['required','digits:24']];
 else $rules+=['phone'=>['required','regex:/^0[0-9]{10}$/'],'full_name'=>'required|string|max:255','service_title'=>'required|string|max:255','website'=>'nullable|url|max:255'];

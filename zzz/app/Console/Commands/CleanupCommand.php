@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AdEdit;
 use App\Models\ServiceAdDraft;
 use App\Models\ServiceSubscription;
 use Illuminate\Console\Command;
@@ -73,14 +74,44 @@ class CleanupCommand extends Command
         }
 
         /*
-        | مسیرهایی که واقعاً در دیتابیس استفاده می‌شوند. هم ad_images و
-        | هم image_paths پیش‌نویس‌ها باید در نظر گرفته شوند، وگرنه
-        | تصویرِ یک پیش‌نویسِ هنوز معتبر حذف می‌شود.
+        | مسیرهایی که واقعاً در دیتابیس استفاده می‌شوند. هر سه منبع
+        | باید در نظر گرفته شوند، وگرنه فایلی که هنوز به آن نیاز هست
+        | حذف می‌شود.
         */
         $used = DB::table('ad_images')->pluck('path')->all();
 
         foreach (ServiceAdDraft::whereNotNull('image_paths')->pluck('image_paths') as $json) {
             foreach ((array) json_decode((string) $json, true) as $path) {
+                if (is_string($path)) {
+                    $used[] = $path;
+                }
+            }
+        }
+
+        /*
+        |----------------------------------------------------------------------
+        | تصاویرِ درخواست‌های ویرایشِ در انتظار بررسی
+        |----------------------------------------------------------------------
+        |
+        | وقتی ارائه‌دهنده در فرم ویرایش تصویر تازه‌ای می‌فرستد، فایل
+        | بلافاصله روی دیسک می‌نشیند ولی تا تأیید مدیر هیچ ردیفی در
+        | ad_images نمی‌گیرد؛ تنها مرجعش ستون added_images در جدول
+        | ad_edits است.
+        |
+        | این منبع اینجا جا افتاده بود. نتیجه‌اش یک باگ واقعی بود: اگر
+        | مدیر درخواست را تا ۲۴ ساعت بررسی نمی‌کرد، همین پاک‌سازی شبانه
+        | فایل‌ها را «بی‌صاحب» تشخیص می‌داد و حذف می‌کرد. بعد مدیر
+        | تأیید می‌کرد، ردیف‌های ad_images ساخته می‌شدند و به فایل‌هایی
+        | اشاره می‌کردند که دیگر وجود نداشتند - یعنی آگهی با تصویرهای
+        | شکسته.
+        |
+        | فقط درخواست‌های pending شمرده می‌شوند و همین کافی است:
+        | درخواست تأییدشده فایل‌هایش را به ad_images منتقل کرده (بالا
+        | پوشش داده شد) و درخواست ردشده فایل‌هایش را همان لحظه حذف
+        | کرده است.
+        */
+        foreach (AdEdit::pending()->whereNotNull('added_images')->pluck('added_images') as $paths) {
+            foreach ((array) (is_string($paths) ? json_decode($paths, true) : $paths) as $path) {
                 if (is_string($path)) {
                     $used[] = $path;
                 }
