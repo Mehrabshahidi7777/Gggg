@@ -241,13 +241,16 @@
           </a>
           @endif
           {{--
-              header-auth این دو را هم‌اندازه نگه می‌دارد. بدون آن، هر
-              کدام به اندازه‌ی متن خودش می‌شود و «ثبت‌نام» از «ورود»
-              پهن‌تر می‌افتد - در حالی که کنار هم نشسته‌اند و چشم
-              انتظار دارد دو چیز هم‌رده هم‌اندازه باشند.
+              این دو کنار هم می‌نشینند و هم‌رده‌اند، پس چشم انتظار دارد
+              هم‌اندازه باشند. header-auth-group با یک گرید دو ستونه
+              هر دو را به عرض پهن‌ترین متن می‌رساند - نه بیشتر. ظرف
+              لازم است چون .header-actions آیتم‌های دیگری هم دارد
+              (سبد خرید، دکمه‌ی همبرگری) که نباید هم‌عرض این دو شوند.
           --}}
+          <div class="header-auth-group">
           <a href="{{ route('login') }}" class="btn btn-ghost btn-sm header-auth">ورود</a>
           <a href="{{ route('register') }}" class="btn btn-navy btn-sm header-auth">ثبت‌نام</a>
+          </div>
           @endauth
 
           <button class="menu-toggle" aria-label="باز کردن منو" aria-expanded="false"><span></span></button>
