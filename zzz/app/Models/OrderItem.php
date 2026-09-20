@@ -11,6 +11,11 @@ class OrderItem extends Model
     ];
 
     protected $casts = [
+        // دلیل integer بودنِ کلیدهای خارجی در App\Models\Ad توضیح داده شده.
+        'order_id' => 'integer',
+        'ad_id' => 'integer',
+        'seller_id' => 'integer',
+
         'unit_price' => 'decimal:2',
         'subtotal' => 'decimal:2',
     ];

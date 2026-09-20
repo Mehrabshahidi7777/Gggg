@@ -64,25 +64,42 @@
                 ستاره‌ی «بسیار عالی» سمت راست بیفتد، این ظرف عمداً
                 direction:ltr می‌گیرد و ستاره‌ها از ۱ تا ۵ رندر می‌شوند.
             --}}
-            <div class="star-rate__stars" role="radiogroup" aria-label="امتیاز شما به این آگهی">
-                @for($i = 1; $i <= 5; $i++)
-                    <label class="star-rate__star" title="{{ $labels[$i] }}">
-                        <input
-                            type="radio"
-                            name="rating"
-                            value="{{ $i }}"
-                            {{ $mine === $i ? 'checked' : '' }}
-                            aria-label="{{ $i }} ستاره - {{ $labels[$i] }}"
-                        >
-                        <span class="star" aria-hidden="true">★</span>
-                    </label>
-                @endfor
-            </div>
+            {{--
+                ستاره‌ها و راهنمای حدها عمداً داخل یک ظرف مشترک‌اند.
 
-            {{-- راهنمای حدها: چپ = بدترین، راست = بهترین --}}
-            <div class="star-rate__scale" aria-hidden="true">
-                <span>{{ $labels[1] }}</span>
-                <span>{{ $labels[5] }}</span>
+                قبلاً کنار هم بودند و عرض راهنما با max-width حدس زده
+                می‌شد. ولی عرض واقعی ردیف ستاره‌ها به اندازه‌ی قلم و
+                padding بستگی دارد و در هر بریک‌پوینت فرق می‌کند، پس
+                آن حدس همیشه غلط بود: «افتضاح» چند ده پیکسل چپ‌تر از
+                اولین ستاره می‌افتاد.
+
+                حالا این ظرف دقیقاً به اندازه‌ی ستاره‌ها جمع می‌شود و
+                راهنما با position:absolute روی همان عرض کشیده می‌شود -
+                بدون هیچ عدد ثابتی.
+            --}}
+            <div class="star-rate__pick">
+
+                <div class="star-rate__stars" role="radiogroup" aria-label="امتیاز شما به این آگهی">
+                    @for($i = 1; $i <= 5; $i++)
+                        <label class="star-rate__star" title="{{ $labels[$i] }}">
+                            <input
+                                type="radio"
+                                name="rating"
+                                value="{{ $i }}"
+                                {{ $mine === $i ? 'checked' : '' }}
+                                aria-label="{{ $i }} ستاره - {{ $labels[$i] }}"
+                            >
+                            <span class="star" aria-hidden="true">★</span>
+                        </label>
+                    @endfor
+                </div>
+
+                {{-- راهنمای حدها: چپ = بدترین، راست = بهترین --}}
+                <div class="star-rate__scale" aria-hidden="true">
+                    <span>{{ $labels[1] }}</span>
+                    <span>{{ $labels[5] }}</span>
+                </div>
+
             </div>
 
             <p class="star-rate__live" data-star-live>

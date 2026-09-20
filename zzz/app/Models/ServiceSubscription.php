@@ -3,7 +3,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 class ServiceSubscription extends Model {
     protected $fillable=['type','user_id','service_plan_id','amount','starts_at','ends_at','grace_until','paid_at','transaction_id','reference_id','status'];
-    protected $casts=['amount'=>'decimal:2','starts_at'=>'datetime','ends_at'=>'datetime','grace_until'=>'datetime','paid_at'=>'datetime'];
+    protected $casts=['user_id'=>'integer','service_plan_id'=>'integer','amount'=>'decimal:2','starts_at'=>'datetime','ends_at'=>'datetime','grace_until'=>'datetime','paid_at'=>'datetime'];
     public function user(){return $this->belongsTo(User::class);}
     public function plan(){return $this->belongsTo(ServicePlan::class,'service_plan_id');}
     public function scopeCurrent($q){

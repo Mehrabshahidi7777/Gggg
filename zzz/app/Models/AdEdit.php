@@ -20,6 +20,11 @@ class AdEdit extends Model
     ];
 
     protected $casts = [
+        // دلیل integer بودنِ کلیدهای خارجی در App\Models\Ad توضیح داده شده.
+        'ad_id' => 'integer',
+        'user_id' => 'integer',
+        'reviewed_by' => 'integer',
+
         'payload' => 'array',
         'original' => 'array',
         'added_images' => 'array',

@@ -686,14 +686,38 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 
 /* --- راهنمای حدها (چپ = بدترین، راست = بهترین) --- */
 
+/* ستاره‌ها + راهنمای حدها.
+
+   .star-rate__pick یک inline-block است، پس عرضش دقیقاً به اندازه‌ی
+   ردیف ستاره‌ها جمع می‌شود. راهنما position:absolute است، بنابراین
+   در محاسبه‌ی آن عرض شرکت نمی‌کند (وگرنه اگر متن راهنما از ستاره‌ها
+   پهن‌تر می‌شد، ظرف را می‌کشید) و با inset-inline:0 دقیقاً همان
+   عرض را می‌گیرد.
+
+   قبلاً راهنما کنار ستاره‌ها بود و عرضش با max-width حدس زده می‌شد -
+   ۱۴۸ و ۲۱۰ و ۲۶۰ پیکسل برای حالت‌های مختلف. آن اعداد هیچ‌وقت با
+   عرض واقعی ستاره‌ها یکی نبودند و «افتضاح» از اولین ستاره بیرون
+   می‌زد. حالا هیچ عدد ثابتی در کار نیست. */
+.star-rate__pick {
+  position: relative;
+  display: inline-block;
+  align-self: flex-start;
+  /* جای راهنمایی که از جریان خارج شده */
+  margin-bottom: 1.35em;
+}
+
 .star-rate__scale {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  margin-top: 2px;
   direction: ltr;
   display: flex;
   justify-content: space-between;
-  max-width: 148px;
   font-size: .66rem;
   font-weight: 700;
   color: var(--color-steel-light);
+  white-space: nowrap;
 }
 
 .star-rate__live { font-size: .74rem; color: var(--color-steel); margin: 0; min-height: 1.1em; }
@@ -713,15 +737,12 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 
 .star-rate--compact { gap: 4px; padding: 10px 16px 12px; border-top: 1px solid var(--color-line); }
 .star-rate--compact .star { font-size: 1.15rem; }
-.star-rate--compact .star-rate__scale { max-width: 140px; }
 
 /* روی موبایل ستاره‌ها بزرگ‌تر می‌شوند تا هدف لمس راحت باشد. */
 @media (max-width: 640px) {
   .star-rate__star { padding: 8px 5px; }
   .star-rate--compact .star { font-size: 1.45rem; }
   .star-rate--full .star { font-size: 2.1rem; }
-  .star-rate--compact .star-rate__scale { max-width: 180px; }
-  .star-rate--full .star-rate__scale { max-width: 260px; }
 }
 
 .star-rate--full {
@@ -731,7 +752,7 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
   background: var(--color-white);
 }
 .star-rate--full .star { font-size: 1.85rem; }
-.star-rate--full .star-rate__scale { max-width: 210px; font-size: .74rem; }
+.star-rate--full .star-rate__scale { font-size: .74rem; }
 
 /* ==========================================================================
    اطلاعات تماس آگهی (نمایش عمومی برای محصول و خدمت)

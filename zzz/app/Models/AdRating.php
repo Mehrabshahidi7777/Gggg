@@ -18,6 +18,11 @@ class AdRating extends Model
     ];
 
     protected $casts = [
+        // دلیل integer بودنِ کلیدهای خارجی در App\Models\Ad توضیح داده شده.
+        'ad_id' => 'integer',
+        'user_id' => 'integer',
+        'comment_reviewed_by' => 'integer',
+
         'rating' => 'integer',
         'comment_reviewed_at' => 'datetime',
     ];

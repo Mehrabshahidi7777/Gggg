@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     protected $fillable=['order_number','buyer_id','total_amount','phone','address','status','payment_transaction_id','payment_reference_id','paid_at'];
-    protected $casts=['total_amount'=>'decimal:2','paid_at'=>'datetime'];
+    protected $casts=['buyer_id'=>'integer','total_amount'=>'decimal:2','paid_at'=>'datetime'];
     public function buyer(){return $this->belongsTo(User::class,'buyer_id');}
     public function items(){return $this->hasMany(OrderItem::class);}
 
