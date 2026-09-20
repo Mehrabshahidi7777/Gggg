@@ -1,4 +1,45 @@
 /* ==========================================================================
+   وزیرمتن — میزبانی روی خود هاست
+   --------------------------------------------------------------------------
+
+   قبلاً این فونت از jsdelivr لود می‌شد. برای کاربر ایرانی آن CDN گاهی کند
+   یا در دسترس نیست، و تا وقتی فونت نرسیده متن با قلم پیش‌فرض سیستم نشان
+   داده می‌شود — یعنی چند ثانیه‌ی اول، سایت شکل خودش را ندارد.
+
+   فقط پنج وزنی که در کد واقعاً استفاده می‌شوند اینجا هستند. اگر روزی
+   وزن دیگری (مثلاً ۳۰۰) به کار بردید، مرورگر آن را از روی نزدیک‌ترین وزن
+   می‌سازد و نتیجه‌اش کمی بدریخت می‌شود؛ آن وقت فایلش را هم اضافه کنید.
+
+   مسیرها نسبت به همین فایل‌اند: css/ → ../fonts/
+   ========================================================================== */
+
+@font-face {
+  font-family: Vazirmatn;
+  src: url('../fonts/Vazirmatn-Regular.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: Vazirmatn;
+  src: url('../fonts/Vazirmatn-SemiBold.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: Vazirmatn;
+  src: url('../fonts/Vazirmatn-Bold.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: Vazirmatn;
+  src: url('../fonts/Vazirmatn-ExtraBold.woff2') format('woff2');
+  font-weight: 800; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: Vazirmatn;
+  src: url('../fonts/Vazirmatn-Black.woff2') format('woff2');
+  font-weight: 900; font-style: normal; font-display: swap;
+}
+
+/* ==========================================================================
    سازمت (Sazmet) — Design Tokens
    Palette: "Blueprint" — inspired by architectural drawings & site plans
    ========================================================================== */

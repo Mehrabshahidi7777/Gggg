@@ -58,7 +58,20 @@
           @vite(['resources/css/app.css','resources/js/app.js'])
           <link rel="stylesheet" href="{{ asset('css/design-tokens.css') }}?v={{ @filemtime(public_path('css/design-tokens.css')) }}">
           <link rel="stylesheet" href="{{ asset('css/sazmat-theme.css') }}?v={{ @filemtime(public_path('css/sazmat-theme.css')) }}">
-          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+          {{--
+              وزیرمتن حالا از خود هاست می‌آید (تعریف @font-face در بالای
+              design-tokens.css). خط jsdelivr برداشته شد: برای کاربر
+              ایرانی آن CDN گاهی کند یا در دسترس نیست و تا رسیدنِ فونت،
+              سایت شکل خودش را ندارد.
+
+              دو وزنی که همان ابتدای صفحه لازم‌اند preload می‌شوند تا متن
+              با قلم درست رندر شود، نه اینکه اول با قلم سیستم بیاید و بعد
+              بپرد.
+          --}}
+          <link rel="preload" as="font" type="font/woff2" crossorigin
+                href="{{ asset('fonts/Vazirmatn-Regular.woff2') }}">
+          <link rel="preload" as="font" type="font/woff2" crossorigin
+                href="{{ asset('fonts/Vazirmatn-Bold.woff2') }}">
 
           <style>
           .cart-badge {
