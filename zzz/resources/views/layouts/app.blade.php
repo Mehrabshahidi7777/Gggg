@@ -240,8 +240,14 @@
           <span class="cart-badge {{ $cartCount > 0 ? '' : 'hidden' }}" id="guest-cart-count-badge">{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
           </a>
           @endif
-          <a href="{{ route('login') }}" class="btn btn-ghost btn-sm">ورود</a>
-          <a href="{{ route('register') }}" class="btn btn-navy btn-sm">ثبت‌نام</a>
+          {{--
+              header-auth این دو را هم‌اندازه نگه می‌دارد. بدون آن، هر
+              کدام به اندازه‌ی متن خودش می‌شود و «ثبت‌نام» از «ورود»
+              پهن‌تر می‌افتد - در حالی که کنار هم نشسته‌اند و چشم
+              انتظار دارد دو چیز هم‌رده هم‌اندازه باشند.
+          --}}
+          <a href="{{ route('login') }}" class="btn btn-ghost btn-sm header-auth">ورود</a>
+          <a href="{{ route('register') }}" class="btn btn-navy btn-sm header-auth">ثبت‌نام</a>
           @endauth
 
           <button class="menu-toggle" aria-label="باز کردن منو" aria-expanded="false"><span></span></button>

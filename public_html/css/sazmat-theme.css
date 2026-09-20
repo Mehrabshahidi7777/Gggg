@@ -151,6 +151,20 @@ p { color: var(--color-steel); }
 
 .header-actions { display: flex; align-items: center; gap: 12px; }
 
+/* «ورود» و «ثبت‌نام» کنار هم می‌نشینند و هم‌رده‌اند، پس باید یک اندازه
+   باشند.
+
+   min-width عرض را یکی می‌کند: بدون آن هرکدام به اندازه‌ی متن خودش
+   می‌شود و «ثبت‌نام» که دو نویسه بلندتر است پهن‌تر می‌افتد.
+
+   حاشیه‌ی شفاف ارتفاع را یکی می‌کند: «ورود» حاشیه‌ی ۱.۵ پیکسلی دارد و
+   «ثبت‌نام» ندارد، پس بدون این، آن یکی دو پیکسل بلندتر می‌شد. */
+.header-auth { min-width: 96px; border: 1.5px solid transparent; }
+
+/* دو کلاس، پس از قانون بالا خاص‌تر است و حاشیه‌ی واقعیِ «ورود» را
+   برمی‌گرداند. */
+.header-actions .btn-ghost.header-auth { border-color: var(--color-line-strong); }
+
 .lang-switch {
   display: flex; align-items: center; border: 1.5px solid var(--color-line-strong);
   border-radius: 999px; padding: 3px; gap: 2px;
@@ -588,9 +602,12 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
   html[dir="rtl"] .main-nav.is-open { transform: translateX(0); }
   .main-nav a { width: 100%; padding: 16px 4px; border-bottom: 1px solid var(--color-line); font-size: 1.05rem; }
   .menu-toggle { display: flex; }
-  .header-actions .btn-ghost span.txt-full { display: none; }
-  .header-actions .btn-ghost span.btn-icon-mobile { display: inline-flex; }
-  .header-actions .btn-ghost { padding: 10px 12px; }
+  /* سه قانون اینجا بود که دکمه‌ی «ورود» را روی موبایل آیکونی می‌کرد.
+     دو تایشان به span.txt-full و span.btn-icon-mobile اشاره می‌کردند -
+     که هیچ‌کدام در مارک‌آپ وجود ندارند و از نسخه‌ی قدیمی‌تری مانده
+     بودند. سومی ولی اعمال می‌شد و به «ورود» padding متفاوتی از
+     «ثبت‌نام» می‌داد، پس آن دو نه هم‌عرض بودند نه هم‌ارتفاع. */
+  .header-actions .header-auth { padding: 9px 14px; }
 }
 
 @media (max-width: 720px) {
