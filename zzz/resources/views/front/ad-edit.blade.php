@@ -94,114 +94,147 @@
             @csrf
             @method('PUT')
 
-            <div class="form-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+            {{--
+                ساختار فیلدها عمداً همان الگوی استاندارد بقیه‌ی سایت است:
 
-                <label style="grid-column:1/-1;">
-                    <span class="field-label">عنوان آگهی *</span>
-                    <input type="text" name="title" value="{{ old('title', $ad->title) }}" required maxlength="255">
-                </label>
+                    <div class="field"><label for="…">…</label><input id="…"></div>
 
-                <label>
-                    <span class="field-label">دسته‌بندی *</span>
-                    <select name="category_id" required>
+                قبلاً این صفحه الگوی خودش را داشت - یک <label> که ورودی را
+                در بر می‌گرفت و یک <span class="field-label"> برای متن. آن
+                کلاس هیچ‌جای CSS تعریف نشده بود، پس برچسب inline می‌ماند و
+                کنار ورودی می‌چسبید، و ورودی‌ها هم چون زیر .field نبودند
+                width:100% نمی‌گرفتند و عرض ذاتی خودشان (حدود ۲۰ نویسه) را
+                نگه می‌داشتند. ستون‌های grid هم به همان اندازه پهن می‌شدند
+                و کل صفحه روی موبایل از عرض بیرون می‌زد.
+
+                همچنین grid-template-columns اینجا inline نوشته شده بود.
+                چون inline style از media query قوی‌تر است، قانون موجودِ
+                «روی عرض کمتر از ۶۴۰ پیکسل تک‌ستونه شو» بی‌اثر می‌شد - در
+                حالی که همان قانون برای فرم ثبت آگهی کار می‌کرد. حالا فقط
+                کلاس گذاشته شده و هیچ استایل inlineای در کار نیست.
+            --}}
+            <div class="form-grid-2">
+
+                <div class="field field--wide">
+                    <label for="edit-title">عنوان آگهی *</label>
+                    <input id="edit-title" type="text" name="title" value="{{ old('title', $ad->title) }}" required maxlength="255">
+                </div>
+
+                <div class="field">
+                    <label for="edit-category">دسته‌بندی *</label>
+                    <select id="edit-category" name="category_id" required>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}" @selected(old('category_id',$ad->category_id)==$category->id)>{{ $category->name }}</option>
                         @endforeach
                     </select>
-                </label>
+                </div>
 
-                <label>
-                    <span class="field-label">قیمت (تومان)</span>
-                    <input type="text" name="price" value="{{ old('price', $ad->price ? (int) $ad->price : '') }}" inputmode="numeric">
-                </label>
+                <div class="field">
+                    <label for="edit-price">قیمت (تومان)</label>
+                    <input id="edit-price" type="text" name="price" value="{{ old('price', $ad->price ? (int) $ad->price : '') }}" inputmode="numeric">
+                </div>
 
-                <label>
-                    <span class="field-label">استان *</span>
-                    <select name="province_id" id="edit-province" required>
+                <div class="field">
+                    <label for="edit-province">استان *</label>
+                    <select id="edit-province" name="province_id" required>
                         @foreach($provinces as $province)
                             <option value="{{ $province->id }}" @selected(old('province_id',$ad->province_id)==$province->id)>{{ $province->name }}</option>
                         @endforeach
                     </select>
-                </label>
+                </div>
 
-                <label>
-                    <span class="field-label">شهر *</span>
-                    <select name="city_id" id="edit-city" required
+                <div class="field">
+                    <label for="edit-city">شهر *</label>
+                    <select id="edit-city" name="city_id" required
                             data-selected="{{ old('city_id', $ad->city_id) }}"></select>
-                </label>
+                </div>
 
                 @if($ad->type === 'product')
 
-                    <label>
-                        <span class="field-label">برند</span>
-                        <input type="text" name="brand" value="{{ old('brand', $ad->brand) }}" maxlength="100">
-                    </label>
+                    <div class="field">
+                        <label for="edit-brand">برند</label>
+                        <input id="edit-brand" type="text" name="brand" value="{{ old('brand', $ad->brand) }}" maxlength="100">
+                    </div>
 
-                    <label>
-                        <span class="field-label">مدل</span>
-                        <input type="text" name="model" value="{{ old('model', $ad->model) }}" maxlength="100">
-                    </label>
+                    <div class="field">
+                        <label for="edit-model">مدل</label>
+                        <input id="edit-model" type="text" name="model" value="{{ old('model', $ad->model) }}" maxlength="100">
+                    </div>
 
-                    <label>
-                        <span class="field-label">وضعیت کالا</span>
-                        <select name="condition">
+                    <div class="field">
+                        <label for="edit-condition">وضعیت کالا</label>
+                        <select id="edit-condition" name="condition">
                             <option value="">—</option>
                             <option value="new" @selected(old('condition',$ad->condition)==='new')>نو</option>
                             <option value="used" @selected(old('condition',$ad->condition)==='used')>کارکرده</option>
                         </select>
-                    </label>
+                    </div>
 
-                    <label>
-                        <span class="field-label">شماره شبا (۲۴ رقم، بدون IR) *</span>
-                        <input type="text" name="card_number" value="{{ old('card_number', $ad->card_number) }}" inputmode="numeric" required>
-                    </label>
+                    {{--
+                        شماره شبا ۲۴ رقم است و در یک ستونِ نصف‌عرض جا
+                        نمی‌شود؛ تمام عرض می‌گیرد و dir=ltr هم دارد تا
+                        ارقام از چپ به راست تایپ شوند.
+                    --}}
+                    <div class="field field--wide">
+                        <label for="edit-card">شماره شبا (۲۴ رقم، بدون IR) *</label>
+                        <input id="edit-card" type="text" name="card_number" value="{{ old('card_number', $ad->card_number) }}"
+                               inputmode="numeric" dir="ltr" maxlength="24" required>
+                    </div>
 
                 @else
 
-                    <label>
-                        <span class="field-label">نام و نام خانوادگی *</span>
-                        <input type="text" name="full_name" value="{{ old('full_name', $ad->full_name) }}" required maxlength="255">
-                    </label>
+                    <div class="field">
+                        <label for="edit-fullname">نام و نام خانوادگی *</label>
+                        <input id="edit-fullname" type="text" name="full_name" value="{{ old('full_name', $ad->full_name) }}" required maxlength="255">
+                    </div>
 
-                    <label>
-                        <span class="field-label">عنوان تخصص *</span>
-                        <input type="text" name="service_title" value="{{ old('service_title', $ad->service_title) }}" required maxlength="255">
-                    </label>
+                    <div class="field">
+                        <label for="edit-service-title">عنوان تخصص *</label>
+                        <input id="edit-service-title" type="text" name="service_title" value="{{ old('service_title', $ad->service_title) }}" required maxlength="255">
+                    </div>
 
-                    <label style="grid-column:1/-1;">
-                        <span class="field-label">وب‌سایت</span>
-                        <input type="url" name="website" value="{{ old('website', $ad->website) }}" maxlength="255" dir="ltr">
-                    </label>
+                    <div class="field field--wide">
+                        <label for="edit-website">وب‌سایت</label>
+                        <input id="edit-website" type="url" name="website" value="{{ old('website', $ad->website) }}" maxlength="255" dir="ltr">
+                    </div>
 
                 @endif
 
-                <label>
-                    <span class="field-label">شماره تماس *</span>
-                    <input type="text" name="phone" value="{{ old('phone', $ad->phone) }}" required dir="ltr" inputmode="numeric" placeholder="09121234567">
-                </label>
+                <div class="field">
+                    <label for="edit-phone">شماره تماس *</label>
+                    <input id="edit-phone" type="text" name="phone" value="{{ old('phone', $ad->phone) }}"
+                           required dir="ltr" inputmode="numeric" maxlength="11" placeholder="09121234567">
+                </div>
 
-                <label style="grid-column:1/-1;">
-                    <span class="field-label">آدرس *</span>
-                    <input type="text" name="address" value="{{ old('address', $ad->address) }}" required maxlength="1000">
-                </label>
+                {{--
+                    maxlength اینجا ۲۵۵ است، نه ۱۰۰۰. ستون address در
+                    دیتابیس varchar(255) است و اعتبارسنجی سمت سرور هم روی
+                    همان ۲۵۵ بسته شده. اگر مرورگر اجازه‌ی تایپ ۱۰۰۰ نویسه
+                    بدهد، کاربر متن بلند می‌نویسد و موقع ثبت با خطا
+                    روبه‌رو می‌شود - در حالی که می‌شد همان اول جلویش را
+                    گرفت.
+                --}}
+                <div class="field field--wide">
+                    <label for="edit-address">آدرس *</label>
+                    <input id="edit-address" type="text" name="address" value="{{ old('address', $ad->address) }}" required maxlength="255">
+                </div>
 
-                <label style="grid-column:1/-1;">
-                    <span class="field-label">توضیحات</span>
-                    <textarea name="description" rows="6" maxlength="5000">{{ old('description', $ad->description) }}</textarea>
-                </label>
+                <div class="field field--wide">
+                    <label for="edit-description">توضیحات</label>
+                    <textarea id="edit-description" name="description" rows="6" maxlength="5000">{{ old('description', $ad->description) }}</textarea>
+                </div>
 
             </div>
 
             {{-- تصاویر فعلی --}}
             @if($ad->images->count())
-                <div style="margin-top:24px;">
-                    <span class="field-label">تصاویر فعلی — تیک بزنید تا حذف شوند</span>
-                    <div class="sz-grid sz-grid-4" style="margin-top:10px;">
+                <div class="field">
+                    <label>تصاویر فعلی — تیک بزنید تا حذف شوند</label>
+                    <div class="sz-grid sz-grid-4">
                         @foreach($ad->images as $image)
-                            <label style="cursor:pointer;display:block;">
-                                <img src="{{ Storage::url($image->path) }}" alt=""
-                                     style="width:100%;height:110px;object-fit:cover;border-radius:var(--radius-sm);border:2px solid var(--color-line);">
-                                <span style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:.8rem;">
+                            <label class="ad-edit-image">
+                                <img src="{{ Storage::url($image->path) }}" alt="">
+                                <span>
                                     <input type="checkbox" name="delete_images[]" value="{{ $image->id }}">
                                     حذف این تصویر
                                 </span>
@@ -211,10 +244,10 @@
                 </div>
             @endif
 
-            <label style="display:block;margin-top:20px;">
-                <span class="field-label">افزودن تصویر جدید (حداکثر ۱۰ تصویر، هرکدام تا ۱۰ مگابایت)</span>
-                <input type="file" name="images[]" accept="image/jpeg,image/png,image/webp" multiple>
-            </label>
+            <div class="field">
+                <label for="edit-images">افزودن تصویر جدید (حداکثر ۱۰ تصویر، هرکدام تا ۱۰ مگابایت)</label>
+                <input id="edit-images" type="file" name="images[]" accept="image/jpeg,image/png,image/webp" multiple>
+            </div>
 
             <button class="btn btn-navy" type="submit" style="margin-top:26px;">ثبت درخواست ویرایش</button>
 
