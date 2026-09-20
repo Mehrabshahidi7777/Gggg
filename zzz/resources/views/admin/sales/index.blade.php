@@ -18,7 +18,7 @@
         @endforeach
     </select>
     <button class="btn-primary">نمایش گزارش</button>
-    @if($sellerId)<a href="{{ route('admin.sales.index') }}" class="btn-secondary">حذف فیلتر</a>@endif
+    @if($sellerId)<a href="{{ route('admin.sales.index') }}" class="btn btn-outline-navy btn-sm">حذف فیلتر</a>@endif
 </form>
 
 @if($currentPeriod)

@@ -36,6 +36,9 @@
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 20px;
+  /* همه‌ی دکمه‌ها و چیپ‌های سایت قرصی‌اند؛ این عدد قبلاً به‌صورت 999px
+     در جای‌جای تم تکرار می‌شد. */
+  --radius-pill: 999px;
 
   /* Shadow */
   --shadow-sm: 0 1px 3px rgba(14, 42, 71, 0.07);

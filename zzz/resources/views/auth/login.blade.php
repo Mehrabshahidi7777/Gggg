@@ -4,12 +4,12 @@
 
 <div class="max-w-md mx-auto px-4 py-12"><div class="card p-8"><h1 class="text-2xl font-black">ورود</h1>
 
-<div class="grid grid-cols-2 gap-2 mt-6">
-    <button type="button" data-tab="email" class="auth-tab btn-primary">
+<div class="seg mt-6">
+    <button type="button" data-tab="email" class="auth-tab is-active">
         ورود با ایمیل
     </button>
 
-    <button type="button" data-tab="mobile" class="auth-tab btn-secondary opacity-60">
+    <button type="button" data-tab="mobile" class="auth-tab">
         ورود با شماره
     </button>
 </div>
@@ -122,11 +122,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         button.addEventListener('click', function () {
 
+            /*
+            | قبلاً اینجا opacity جابه‌جا می‌شد، نه حالت فعال. چون رنگِ
+            | نارنجی روی کلاس تبِ اول چسبیده بود، هر کدام را که کلیک
+            | می‌کردی باز هم تبِ اول رنگی می‌ماند.
+            */
             document.querySelectorAll('.auth-tab').forEach(function (item) {
-                item.classList.add('opacity-60');
+                item.classList.remove('is-active');
             });
 
-            button.classList.remove('opacity-60');
+            button.classList.add('is-active');
 
             document.querySelectorAll('.auth-panel').forEach(function (panel) {
                 panel.classList.add('hidden');

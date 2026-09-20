@@ -68,14 +68,14 @@
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: var(--color-orange, #D9642B);
+          background: var(--color-orange, #BF5522);
           color: #fff;
           border-radius: 999px;
           font-size: 10px;
           font-weight: 900;
           line-height: 1;
           border: 2px solid #fff;
-          box-shadow: 0 2px 6px rgba(217,100,43,.3);
+          box-shadow: 0 2px 6px rgba(191,85,34,.3);
           }
           .cart-badge.hidden { display:none !important; }
           .cart-badge.pulse { animation: cartBadgePulse .35s ease; }
@@ -112,7 +112,7 @@
           .account-dropdown .menu-count {
           margin-inline-start:auto; min-width:20px; height:20px; padding:0 5px;
           border-radius:999px; display:inline-flex; align-items:center; justify-content:center;
-          background:var(--color-orange,#D9642B); color:#fff; font-size:10px; font-weight:900;
+          background:var(--color-orange,#BF5522); color:#fff; font-size:10px; font-weight:900;
           }
           .cart-guest { position:relative; }
           .cart-link { display:flex; align-items:center; gap:6px; padding:9px 14px; border-radius:999px; border:1.5px solid var(--color-line-strong,#C7D0DB); color:var(--color-ink,#0E2A47); font-weight:700; font-size:.85rem; white-space:nowrap; }
@@ -147,6 +147,14 @@
           @php $cartCount = $cartEnabled ? array_sum(array_map('intval', session('cart', []))) : 0; @endphp
 
           @auth
+          {{--
+              نارنجی در هدر فقط روی «ثبت آگهی» می‌نشیند و جای دیگری خرج
+              نمی‌شود. هدر روی همه‌ی صفحه‌ها دیده می‌شود، پس هر نارنجیِ
+              اضافه‌ای اینجا با دکمه‌ی اصلیِ خودِ آن صفحه رقابت می‌کند.
+
+              «ثبت‌نام» اقدام فرعی است (خودِ «ثبت آگهی» هم کاربر را به
+              ثبت‌نام می‌برد) و «بله، خروج» یک تأیید است، نه اقدام اصلی.
+          --}}
           <a href="{{ route('ad.create') }}" class="btn btn-primary btn-sm">ثبت آگهی</a>
 
           <div class="account-menu">
@@ -207,7 +215,7 @@
           </a>
           @endif
           <a href="{{ route('login') }}" class="btn btn-ghost btn-sm">ورود</a>
-          <a href="{{ route('register') }}" class="btn btn-primary btn-sm">ثبت‌نام</a>
+          <a href="{{ route('register') }}" class="btn btn-outline-navy btn-sm">ثبت‌نام</a>
           @endauth
 
           <button class="menu-toggle" aria-label="باز کردن منو" aria-expanded="false"><span></span></button>
@@ -221,7 +229,7 @@
           <h2 class="font-black text-lg">آیا می‌خواهید خارج شوید؟</h2>
           <p class="text-sm text-gray-500 mt-2">با تأیید، از حساب کاربری خارج می‌شوید.</p>
           <div class="flex gap-3 mt-6">
-          <form method="POST" action="{{ route('logout') }}" class="flex-1">@csrf<button class="btn btn-primary btn-block" type="submit">بله، خروج</button></form>
+          <form method="POST" action="{{ route('logout') }}" class="flex-1">@csrf<button class="btn btn-navy btn-block" type="submit">بله، خروج</button></form>
           <button type="button" id="logout-close" class="btn btn-ghost" style="flex:1;">خیر</button>
           </div>
           </div>
