@@ -15,7 +15,14 @@
         </div>
 
         <form class="hero-search" action="{{ route('search') }}" method="GET">
-            <div class="hero-search-field">
+            {{--
+                این <label> است، نه <div>: تا زدن روی هر جای این ناحیه -
+                آیکون ذره‌بین هم - فیلد را فوکوس کند.
+
+                قبلاً آیکون فقط یک تصویر بود و زدن رویش هیچ کاری نمی‌کرد،
+                در حالی که کاربر طبیعتاً فکر می‌کند باید همان را بزند.
+            --}}
+            <label class="hero-search-field" for="main-search">
                 <span data-icon="search"></span>
                 <input
                     id="main-search"
@@ -27,7 +34,7 @@
                     aria-label="جستجو در محصولات و خدمات"
                     required
                 >
-            </div>
+            </label>
             <button type="submit" class="btn btn-primary">جستجو</button>
         </form>
 

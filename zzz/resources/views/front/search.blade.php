@@ -3,7 +3,7 @@
 @section('content')
 <div class="container" style="padding-top:32px;padding-bottom:60px;">
     <div class="section-head" style="margin-bottom:24px;"><div class="eyebrow">جستجوی سازمت</div><h1 style="margin-top:8px;">نتایج برای «{{ $search }}»</h1><p>{{ $total }} نتیجه مرتبط پیدا شد.</p></div>
-    <form class="hero-search" action="{{ route('search') }}" method="GET" style="max-width:760px;margin-bottom:38px;"><div class="hero-search-field"><span data-icon="search"></span><input type="search" name="search" value="{{ $search }}" required aria-label="جستجو"></div><button class="btn btn-primary">جستجو</button></form>
+    <form class="hero-search" action="{{ route('search') }}" method="GET" style="max-width:760px;margin-bottom:38px;"><label class="hero-search-field" for="results-search"><span data-icon="search"></span><input id="results-search" type="search" name="search" value="{{ $search }}" required aria-label="جستجو"></label><button class="btn btn-primary">جستجو</button></form>
 
     @if($products->count())<section style="margin-bottom:44px;"><div class="section-head" style="display:flex;justify-content:space-between;align-items:center;max-width:none;margin-bottom:18px;"><h2 style="font-size:1.2rem;">محصولات <span style="color:var(--color-steel-light);font-size:.85rem;">{{ $products->count() }} مورد</span></h2><a class="btn btn-ghost btn-sm" href="{{ route('products',['search'=>$search]) }}">همه محصولات ←</a></div><div class="sz-grid sz-grid-4">@foreach($products as $ad)<x-ad-card :ad="$ad"/>@endforeach</div></section>@endif
 

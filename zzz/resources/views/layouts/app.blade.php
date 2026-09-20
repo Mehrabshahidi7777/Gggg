@@ -64,14 +64,22 @@
               ایرانی آن CDN گاهی کند یا در دسترس نیست و تا رسیدنِ فونت،
               سایت شکل خودش را ندارد.
 
-              دو وزنی که همان ابتدای صفحه لازم‌اند preload می‌شوند تا متن
+              سه وزنی که همان ابتدای صفحه لازم‌اند preload می‌شوند تا متن
               با قلم درست رندر شود، نه اینکه اول با قلم سیستم بیاید و بعد
-              بپرد.
+              بپرد: ۴۰۰ برای بدنه، ۷۰۰ برای برچسب‌ها، و ۹۰۰ برای عنوان
+              اصلی.
+
+              وزن ۹۰۰ اول جا افتاده بود. عنوان هیرو با همان رندر می‌شود و
+              درست بالای صفحه است، پس تا رسیدنش با قلم پیش‌فرض سیستم
+              نشان داده می‌شد و بعد می‌پرید - که چشم آن را «یک جور
+              دیگر، کم‌جان‌تر» می‌بیند.
           --}}
           <link rel="preload" as="font" type="font/woff2" crossorigin
                 href="{{ asset('fonts/Vazirmatn-Regular.woff2') }}">
           <link rel="preload" as="font" type="font/woff2" crossorigin
                 href="{{ asset('fonts/Vazirmatn-Bold.woff2') }}">
+          <link rel="preload" as="font" type="font/woff2" crossorigin
+                href="{{ asset('fonts/Vazirmatn-Black.woff2') }}">
 
           <style>
           .cart-badge {

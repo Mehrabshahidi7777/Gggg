@@ -250,15 +250,29 @@ p { color: var(--color-steel); }
 .hero-shop-head .eyebrow { justify-content: center; }
 .hero--shop .lede { max-width: 100%; margin: 14px auto 0; }
 
+/* کل کارت جست‌وجو یک واحد آبی است، نه یک کادر خاکستری که تویش چیزی
+   نشسته. این پرکاربردترین عنصر صفحه‌ی اول است و باید در یک نگاه
+   دیده شود. */
 .hero-search {
   display: flex; align-items: center; gap: 0; max-width: 720px; margin: 32px auto 0;
-  background: #fff; border: 1.5px solid var(--color-line-strong); border-radius: 999px;
+  background: #fff; border: 2px solid var(--color-blueprint); border-radius: 999px;
   box-shadow: var(--shadow-md); padding: 6px;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+/* وقتی کاربر داخلش تایپ می‌کند، کل کارت واکنش نشان می‌دهد - نه فقط
+   خودِ input که حاشیه‌اش را از قبل برداشته‌ایم. */
+.hero-search:focus-within {
+  border-color: var(--color-blueprint-dark);
+  box-shadow: 0 0 0 4px var(--color-blueprint-tint), var(--shadow-md);
 }
 .hero-search-tabs { display: flex; flex-shrink: 0; background: var(--color-paper); border-radius: 999px; padding: 4px; margin-inline-end: 4px; }
 .hero-search-tabs button { padding: 10px 16px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; color: var(--color-steel-light); white-space: nowrap; }
 .hero-search-tabs button.is-active { background: var(--color-ink); color: #fff; }
-.hero-search-field { flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--color-steel-light); min-width: 0; }
+/* این یک <label> است تا زدن روی آیکون ذره‌بین هم فیلد را فوکوس کند؛
+   پس باید نشانگر متن بگیرد، نه نشانگر پیش‌فرض. */
+.hero-search-field { flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--color-steel-light); min-width: 0; cursor: text; }
+.hero-search-field svg { cursor: text; }
 .hero-search-field svg { width: 18px; height: 18px; flex-shrink: 0; }
 .hero-search-field input { flex: 1; border: none; padding: 10px 0; font-size: 0.95rem; background: transparent; min-width: 0; }
 .hero-search-field input:focus { outline: none; }
