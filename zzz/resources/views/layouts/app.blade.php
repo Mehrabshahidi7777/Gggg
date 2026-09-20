@@ -167,6 +167,11 @@
 
               «ثبت‌نام» اقدام فرعی است (خودِ «ثبت آگهی» هم کاربر را به
               ثبت‌نام می‌برد) و «بله، خروج» یک تأیید است، نه اقدام اصلی.
+
+              ولی «ورود» و «ثبت‌نام» هم نباید هم‌وزن باشند: برای مهمان،
+              ثبت‌نام کاربر تازه می‌آورد و ورود فقط برای کسی است که از قبل
+              حساب دارد. پس ثبت‌نام سرمه‌ای پُر است و ورود خنثی با حاشیه —
+              سلسله‌مراتب ساخته می‌شود بدون اینکه نارنجی خرج شود.
           --}}
           <a href="{{ route('ad.create') }}" class="btn btn-primary btn-sm">ثبت آگهی</a>
 
@@ -228,7 +233,7 @@
           </a>
           @endif
           <a href="{{ route('login') }}" class="btn btn-ghost btn-sm">ورود</a>
-          <a href="{{ route('register') }}" class="btn btn-outline-navy btn-sm">ثبت‌نام</a>
+          <a href="{{ route('register') }}" class="btn btn-navy btn-sm">ثبت‌نام</a>
           @endauth
 
           <button class="menu-toggle" aria-label="باز کردن منو" aria-expanded="false"><span></span></button>
