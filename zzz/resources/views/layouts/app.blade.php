@@ -20,6 +20,17 @@
 --}}
 <link rel="canonical" href="@yield('canonical', url()->current())">
 
+{{--
+    تأیید مالکیت سایت در گوگل سرچ کنسول.
+
+    تا وقتی GOOGLE_SITE_VERIFICATION در فایل .env خالی باشد هیچ تگی
+    چاپ نمی‌شود؛ بنابراین این خط برای سایتی که هنوز ثبت نشده کاملاً
+    بی‌اثر است. توضیح کامل در config/seo.php.
+--}}
+@if($googleVerification = config('seo.google_site_verification'))
+<meta name="google-site-verification" content="{{ $googleVerification }}">
+@endif
+
 {{-- داده‌ی ساخت‌یافته و تگ‌های اختصاصی هر صفحه --}}
 @stack('head')
 

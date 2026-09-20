@@ -11,3 +11,4 @@
 .DS_Store
 /zzz/storage/*.sqlite
 /zzz/.phpunit.result.cache
+/zzz/database/*.sqlite
