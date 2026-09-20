@@ -303,9 +303,18 @@ class AdController extends Controller
             | اساس میانگین، و در نهایت تعداد امتیاز تا آگهی‌ای که ۵
             | ستاره از یک نفر گرفته بالاتر از ۵ ستاره از ۲۰ نفر نایستد.
             */
+            /*
+            | میانگین وزنی همان‌جا در ORDER BY حساب می‌شود، چون
+            | ratings_weighted_sum و ratings_weight_total ستون‌های
+            | مشتق‌شده‌اند و MySQL اجازه نمی‌دهد در همان SELECT به نام
+            | مستعارشان در یک عبارت محاسباتی ارجاع داده شود.
+            |
+            | تقسیم بر صفر برای آگهیِ بدون امتیاز با NULLIF گرفته
+            | می‌شود؛ نتیجه NULL است و همان رفتار قبلی را می‌دهد.
+            */
             'top_rated' =>
-                $q->orderByRaw('ratings_avg_rating IS NULL')
-                  ->orderByDesc('ratings_avg_rating')
+                $q->orderByRaw('(ratings_weighted_sum / NULLIF(ratings_weight_total, 0)) IS NULL')
+                  ->orderByRaw('(ratings_weighted_sum / NULLIF(ratings_weight_total, 0)) DESC')
                   ->orderByDesc('ratings_count'),
 
             default =>

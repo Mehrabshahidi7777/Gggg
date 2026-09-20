@@ -345,7 +345,25 @@ class Ad extends Model
     */
     public function scopeWithRatingSummary($q)
     {
-        $q->withAvg('ratings', 'rating')->withCount('ratings');
+        /*
+        | میانگین وزنی است، نه ساده: SUM(rating * weight) / SUM(weight).
+        | وزن هر امتیاز بر اساس سن حساب امتیازدهنده در لحظه‌ی رأی ثبت
+        | شده (توضیح در AdRating::weightFor).
+        |
+        | withAvg اینجا کار نمی‌کند چون میانگین ساده می‌گیرد، پس دو
+        | زیرکوئریِ جمع اضافه می‌شود. هر دو روی همان ایندکس
+        | (ad_id, user_id) کار می‌کنند و مثل قبل N+1 نمی‌سازند.
+        */
+        $q->withCount('ratings')->addSelect([
+
+            'ratings_weighted_sum' => AdRating::query()
+                ->selectRaw('COALESCE(SUM(rating * weight), 0)')
+                ->whereColumn('ad_id', 'ads.id'),
+
+            'ratings_weight_total' => AdRating::query()
+                ->selectRaw('COALESCE(SUM(weight), 0)')
+                ->whereColumn('ad_id', 'ads.id'),
+        ]);
 
         if (auth()->check()) {
             $q->with('myRating');
@@ -363,11 +381,29 @@ class Ad extends Model
     {
         return Attribute::make(get: function () {
 
-            $avg = array_key_exists('ratings_avg_rating', $this->attributes)
-                ? $this->attributes['ratings_avg_rating']
-                : $this->ratings()->avg('rating');
+            /*
+            | مسیر سریع: مقادیری که scopeWithRatingSummary از قبل
+            | آورده. مسیر تنبل فقط برای جاهایی است که آن scope صدا
+            | زده نشده، تا هیچ ویویی به خطا نخورد.
+            */
+            if (array_key_exists('ratings_weighted_sum', $this->attributes)) {
+                $sum = (float) $this->attributes['ratings_weighted_sum'];
+                $weight = (float) ($this->attributes['ratings_weight_total'] ?? 0);
+            } else {
+                $row = $this->ratings()
+                    ->selectRaw('COALESCE(SUM(rating * weight), 0) as s, COALESCE(SUM(weight), 0) as w')
+                    ->first();
 
-            return $avg === null ? null : round((float) $avg, 1);
+                $sum = (float) ($row->s ?? 0);
+                $weight = (float) ($row->w ?? 0);
+            }
+
+            /*
+            | وزن صفر یعنی اصلاً امتیازی نیست. تقسیم بر صفر نمی‌کنیم و
+            | null برمی‌گردانیم تا کارت «هنوز امتیازی ثبت نشده» نشان
+            | دهد.
+            */
+            return $weight > 0 ? round($sum / $weight, 1) : null;
         });
     }
 

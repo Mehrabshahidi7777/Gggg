@@ -10,6 +10,7 @@ class AdRating extends Model
         'ad_id',
         'user_id',
         'rating',
+        'weight',
         'comment',
         'comment_status',
         'comment_rejection_reason',
@@ -24,6 +25,7 @@ class AdRating extends Model
         'comment_reviewed_by' => 'integer',
 
         'rating' => 'integer',
+        'weight' => 'float',
         'comment_reviewed_at' => 'datetime',
     ];
 
@@ -45,6 +47,45 @@ class AdRating extends Model
         4 => 'خوب',
         5 => 'بسیار عالی',
     ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | وزن امتیاز
+    |--------------------------------------------------------------------------
+    |
+    | بر اساس سن حسابِ امتیازدهنده در همین لحظه. جدول مقادیر در
+    | config/marketplace.php است تا بدون تغییر کد قابل تنظیم باشد.
+    |
+    | وزن در لحظه‌ی ثبت حساب می‌شود و در ستون ذخیره می‌ماند - نه هنگام
+    | خواندن. اگر موقع خواندن حساب می‌شد، هر کارت آگهی مجبور بود سن
+    | حساب همه‌ی امتیازدهنده‌ها را بخواند و میانگین دیگر با یک SUM
+    | ساده درنمی‌آمد.
+    |
+    | نتیجه‌ی این انتخاب: کسی که در روز اول حسابش امتیاز داده، وزنش
+    | با گذشت زمان بالا نمی‌رود مگر اینکه امتیازش را ویرایش کند. این
+    | عمدی است - وزن، اعتبارِ حساب در لحظه‌ی رأی را ثبت می‌کند.
+    |
+    */
+    public static function weightFor(?User $user): float
+    {
+        $tiers = config('marketplace.rating_weights', [0 => 1.0]);
+
+        // از بزرگ‌ترین آستانه به کوچک‌ترین
+        krsort($tiers);
+
+        $ageInDays = $user?->created_at
+            ? $user->created_at->diffInDays(now())
+            : 0;
+
+        foreach ($tiers as $minimumDays => $weight) {
+            if ($ageInDays >= $minimumDays) {
+                return (float) $weight;
+            }
+        }
+
+        // اگر جدول خالی یا خراب بود، وزن کامل - نه صفر.
+        return 1.0;
+    }
 
     public static function labelFor(?int $rating): string
     {

@@ -64,7 +64,15 @@ class AdRatingController extends Controller
             ->where('user_id', $request->user()->id)
             ->first();
 
-        $attributes = ['rating' => $data['rating']];
+        /*
+        | وزن در همین لحظه بر اساس سن حساب حساب می‌شود و ذخیره می‌ماند.
+        | هر بار که کاربر امتیازش را عوض کند دوباره حساب می‌شود، چون
+        | آن رأیِ تازه است که دارد ثبت می‌شود.
+        */
+        $attributes = [
+            'rating' => $data['rating'],
+            'weight' => AdRating::weightFor($request->user()),
+        ];
 
         /*
         |--------------------------------------------------------------------------
