@@ -81,6 +81,173 @@ class Ad extends Model
         'card_number' => 'encrypted',
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | جست‌وجو
+    |--------------------------------------------------------------------------
+    |
+    | جست‌وجوی قبلی فقط LIKE '%term%' بود. آن درصدِ ابتدای عبارت یعنی
+    | هیچ ایندکسی قابل استفاده نیست و MySQL مجبور است کل جدول را ردیف
+    | به ردیف بخواند - برای هر جست‌وجو. با چند هزار آگهی این محسوس
+    | می‌شود.
+    |
+    | حالا اگر ایندکس FULLTEXT موجود باشد از آن استفاده می‌شود، وگرنه
+    | همان LIKE. هر دو مسیر زنده می‌مانند، به سه دلیل:
+    |
+    |   ۱. تا وقتی فایل SQL ایمپورت نشده، ایندکس وجود ندارد و سایت
+    |      نباید بشکند.
+    |   ۲. تست‌ها روی SQLite اجرا می‌شوند که MATCH ... AGAINST ندارد.
+    |   ۳. پیش‌فرض MySQL کلمات کمتر از سه نویسه را ایندکس نمی‌کند
+    |      (innodb_ft_min_token_size) و روی هاست اشتراکی این تنظیم
+    |      قابل تغییر نیست. پس عبارت‌های کوتاه باید به LIKE بیفتند،
+    |      وگرنه جست‌وجوی «در» هیچ نتیجه‌ای نمی‌دهد.
+    |
+    */
+    public const FULLTEXT_COLUMNS = [
+        'title',
+        'description',
+        'brand',
+        'model',
+        'full_name',
+        'service_title',
+    ];
+
+    public const FULLTEXT_INDEX = 'ads_fulltext';
+
+    /*
+    | کمترین طول کلمه‌ای که MySQL ایندکس می‌کند. پیش‌فرضِ InnoDB است.
+    */
+    public const FULLTEXT_MIN_TOKEN = 3;
+
+    public static function searchTokens(string $term): array
+    {
+        return preg_split('/\s+/u', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    }
+
+    /*
+    | آیا برای این عبارت می‌شود از FULLTEXT استفاده کرد؟
+    |
+    | نتیجه‌ی وجود ایندکس یک روز کش می‌شود؛ بدون کش، هر جست‌وجو یک
+    | کوئری اضافه به information_schema می‌زد و کل هدفِ این کار نقض
+    | می‌شد. اگر فایل SQL را بعداً ایمپورت کردید، یا یک روز صبر کنید
+    | یا کش را پاک کنید.
+    */
+    public static function fullTextIsUsable(string $term): bool
+    {
+        if (\Illuminate\Support\Facades\DB::connection()->getDriverName() !== 'mysql') {
+            return false;
+        }
+
+        foreach (self::searchTokens($term) as $token) {
+            if (mb_strlen($token) < self::FULLTEXT_MIN_TOKEN) {
+                return false;
+            }
+        }
+
+        return self::fullTextIndexExists();
+    }
+
+    public static function fullTextIndexExists(): bool
+    {
+        return \Illuminate\Support\Facades\Cache::remember(
+            'ads.fulltext_index',
+            now()->addDay(),
+            function () {
+                try {
+                    return \Illuminate\Support\Facades\DB::table('information_schema.statistics')
+                        ->where('table_schema', \Illuminate\Support\Facades\DB::getDatabaseName())
+                        ->where('table_name', 'ads')
+                        ->where('index_name', self::FULLTEXT_INDEX)
+                        ->exists();
+                } catch (\Throwable) {
+                    // اگر به information_schema دسترسی نبود، محتاطانه نه.
+                    return false;
+                }
+            }
+        );
+    }
+
+    /*
+    | عبارتِ boolean mode. هر کلمه با + اجباری می‌شود (یعنی «و»، نه
+    | «یا») و با * پیشوندی، تا «سیمان» آگهیِ «سیمانکاری» را هم بیاورد.
+    |
+    | نویسه‌های عملگرِ خود MySQL حذف می‌شوند تا کاربر نتواند - یا @
+    | بفرستد و کوئری را عوض کند یا بشکند.
+    */
+    public static function booleanQueryFor(string $term): string
+    {
+        $tokens = array_map(
+            fn ($t) => preg_replace('/[+\-><()~*"@]+/u', '', $t),
+            self::searchTokens($term)
+        );
+
+        $tokens = array_filter($tokens, fn ($t) => $t !== '');
+
+        return implode(' ', array_map(fn ($t) => '+' . $t . '*', $tokens));
+    }
+
+    /*
+    | $likeColumns ستون‌هایی است که در مسیر LIKE جست‌وجو می‌شوند و
+    | برای محصول و خدمت فرق دارد. مسیر FULLTEXT همیشه روی همان یک
+    | ایندکس کار می‌کند.
+    */
+    public function scopeSearchFor($query, string $term, array $likeColumns)
+    {
+        if (self::fullTextIsUsable($term)) {
+
+            $boolean = self::booleanQueryFor($term);
+
+            $query->where(function ($q) use ($boolean, $term) {
+                $q->whereFullText(self::FULLTEXT_COLUMNS, $boolean, ['mode' => 'boolean'])
+                  ->orWhereHas('category', fn ($c) => $c->where('name', 'like', "%{$term}%"));
+            });
+
+            /*
+            | مرتب‌سازی بر اساس ارتباط، نه فقط تازگی. این مهم‌ترین
+            | سودِ کاربریِ این تغییر است: آگهی‌ای که عبارت در عنوانش
+            | آمده بالاتر از آگهی‌ای می‌نشیند که فقط در توضیحاتش
+            | آمده.
+            */
+            $columns = implode(',', self::FULLTEXT_COLUMNS);
+
+            return $query->orderByRaw(
+                "MATCH({$columns}) AGAINST (? IN BOOLEAN MODE) DESC",
+                [$boolean]
+            );
+        }
+
+        return $query->where(function ($q) use ($likeColumns, $term) {
+
+            foreach (array_values($likeColumns) as $i => $column) {
+                $i === 0
+                    ? $q->where($column, 'like', "%{$term}%")
+                    : $q->orWhere($column, 'like', "%{$term}%");
+            }
+
+            $q->orWhereHas('category', fn ($c) => $c->where('name', 'like', "%{$term}%"));
+        });
+    }
+
+    /*
+    | همان جست‌وجو، ولی به‌زور با LIKE. وقتی مسیر FULLTEXT چیزی پیدا
+    | نکند دوباره با این اجرا می‌شود تا کاربر هیچ‌وقت نتیجه‌ی کمتری
+    | از قبل نگیرد: FULLTEXT کلمه‌محور است و LIKE زیررشته‌محور، و این
+    | دو دقیقاً یکی نیستند.
+    */
+    public function scopeSearchForWithLike($query, string $term, array $likeColumns)
+    {
+        return $query->where(function ($q) use ($likeColumns, $term) {
+
+            foreach (array_values($likeColumns) as $i => $column) {
+                $i === 0
+                    ? $q->where($column, 'like', "%{$term}%")
+                    : $q->orWhere($column, 'like', "%{$term}%");
+            }
+
+            $q->orWhereHas('category', fn ($c) => $c->where('name', 'like', "%{$term}%"));
+        });
+    }
+
     public function sluggable(): array
     {
         return [

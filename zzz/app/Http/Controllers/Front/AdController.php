@@ -56,13 +56,49 @@ class AdController extends Controller
         $search = trim((string) $request->input('search',''));
         if ($search === '') return redirect()->route('home');
 
-        $products = Ad::approved()->where('type','product')->with(['category','province','city','primaryImage'])->withRatingSummary()
-            ->where(fn($q)=>$q->where('title','like',"%{$search}%")->orWhere('description','like',"%{$search}%")->orWhere('brand','like',"%{$search}%")->orWhere('model','like',"%{$search}%")->orWhereHas('category',fn($c)=>$c->where('name','like',"%{$search}%")))
-            ->latest()->limit(8)->get();
+        /*
+        |----------------------------------------------------------------------
+        | مسیر سریع، با عقب‌نشینی مطمئن
+        |----------------------------------------------------------------------
+        |
+        | scopeSearchFor اگر ایندکس FULLTEXT موجود باشد از آن استفاده
+        | می‌کند، وگرنه خودش به LIKE برمی‌گردد.
+        |
+        | ولی یک تفاوت باقی می‌ماند که باید جدی گرفته شود: FULLTEXT
+        | کلمه‌محور است و LIKE زیررشته‌محور. مثلاً جست‌وجوی «یمان»
+        | (تکه‌ای از وسط «سیمان») با LIKE نتیجه می‌دهد و با FULLTEXT
+        | نه.
+        |
+        | پس اگر مسیر سریع دست خالی برگشت، همان جست‌وجو یک بار دیگر با
+        | LIKE اجرا می‌شود. نتیجه این است که کاربر هیچ‌وقت نتیجه‌ی
+        | کمتری از قبل نمی‌گیرد، و در عوض حالت رایج - که کلمه‌ی کامل
+        | جست‌وجو می‌شود - هم سریع است و هم بر اساس ارتباط مرتب شده.
+        |
+        | کوئری دوم فقط وقتی اجرا می‌شود که اولی صفر نتیجه داشته باشد.
+        */
+        $productColumns = ['title', 'description', 'brand', 'model'];
+        $serviceColumns = ['title', 'description', 'full_name', 'service_title'];
 
-        $services = Ad::approved()->where('type','service')->with(['category','province','city','primaryImage'])->withRatingSummary()
-            ->where(fn($q)=>$q->where('title','like',"%{$search}%")->orWhere('description','like',"%{$search}%")->orWhere('full_name','like',"%{$search}%")->orWhere('service_title','like',"%{$search}%")->orWhereHas('category',fn($c)=>$c->where('name','like',"%{$search}%")))
-            ->latest()->limit(8)->get();
+        $find = fn (string $type, array $columns, bool $forceLike) => Ad::approved()
+            ->where('type', $type)
+            ->with(['category','province','city','primaryImage'])
+            ->withRatingSummary()
+            ->when(
+                $forceLike,
+                fn ($q) => $q->searchForWithLike($search, $columns),
+                fn ($q) => $q->searchFor($search, $columns)
+            )
+            ->latest()
+            ->limit(8)
+            ->get();
+
+        $products = $find('product', $productColumns, false);
+        $services = $find('service', $serviceColumns, false);
+
+        if ($products->isEmpty() && $services->isEmpty() && Ad::fullTextIsUsable($search)) {
+            $products = $find('product', $productColumns, true);
+            $services = $find('service', $serviceColumns, true);
+        }
 
         $sellers = User::query()->where('is_admin', false)->where(function($q) use ($search) {
             $q->where('username','like',"%{$search}%")->orWhere('name','like',"%{$search}%")
