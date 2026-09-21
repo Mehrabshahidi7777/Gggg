@@ -325,41 +325,138 @@
           /*
           | سقف تعداد تصویر، همان‌جا در مرورگر.
           |
-          | اعتبارسنجی سمت سرور از قبل هست و حرف آخر را می‌زند، ولی
-          | تا وقتی فقط آنجا باشد، کاربر بیست فایل را آپلود می‌کند،
-          | منتظر می‌ماند، و بعد پیام خطا می‌گیرد. این بررسی پیش از
-          | ارسال جلویش را می‌گیرد.
+          | اعتبارسنجی سمت سرور از قبل هست و حرف آخر را می‌زند
+          | (AdSubmitRequest و AdEditController)، ولی تا وقتی فقط آنجا
+          | باشد کاربر بیست فایل را آپلود می‌کند، منتظر می‌ماند، و بعد
+          | خطا می‌گیرد. این بررسی پیش از ارسال جلویش را می‌گیرد.
           |
-          | هر ورودی فایلی که data-max-images داشته باشد خودکار تحت
-          | پوشش است. data-images-remaining برای فرم ویرایش است، که
-          | سقفش «باقی‌مانده» است نه «کل».
+          | ⚠️ اینجا قبلاً ورودی فایل خالی می‌شد و یک باگ بد می‌ساخت.
+          |
+          | وقتی کاربر بیشتر از سقف انتخاب می‌کرد، اسکریپت انتخابش را
+          | پاک می‌کرد و فقط یک خط راهنمای کوچک می‌نوشت. کاربر آن خط را
+          | نمی‌دید، فرم را می‌فرستاد، و آگهی با *صفر* تصویر ثبت
+          | می‌شد - چون دیگر هیچ فایلی در فرم نبود، پس حتی خطای سرور هم
+          | اتفاق نمی‌افتاد. کاربر فکر می‌کرد عکس‌هایش رفته‌اند.
+          |
+          | حالا انتخاب کاربر هرگز پاک نمی‌شود. موقع انتخاب فقط تعداد
+          | گفته می‌شود و هیچ ایرادی گرفته نمی‌شود؛ ایراد سرِ «ثبت»
+          | گرفته می‌شود، با پیامی که دقیقاً می‌گوید چند تا زیادی است.
           */
           (function () {
           document.querySelectorAll('input[type="file"][data-max-images]').forEach(function (input) {
 
           const note = document.querySelector(input.dataset.imagesNote || '');
+          const form = input.form;
+          const isEditForm = input.dataset.imagesRemaining !== undefined;
 
-          input.addEventListener('change', function () {
+          const picked = function () {
+          return input.files ? input.files.length : 0;
+          };
 
-          const max = parseInt(input.dataset.imagesRemaining ?? input.dataset.maxImages, 10);
-          const picked = input.files ? input.files.length : 0;
+          /*
+           * ظرفیت واقعی.
+           *
+           * در فرم ثبت، همان سقف کل است.
+           *
+           * در فرم ویرایش، «باقی‌مانده» است - ولی این عدد زنده است، نه
+           * چیزی که سرور یک بار فرستاده: کاربر همین حالا می‌تواند چند
+           * تصویر را برای حذف تیک بزند و جا باز کند. با عدد ثابت،
+           * کسی که ۳ تصویر را برای حذف تیک زده بود بی‌دلیل بلوکه
+           * می‌شد.
+           */
+          const capacity = function () {
 
+          const total = parseInt(input.dataset.maxImages, 10);
+
+          if (! isEditForm) { return total; }
+
+          const boxes = form ? form.querySelectorAll('input[name="delete_images[]"]') : [];
+
+          if (! boxes.length) { return parseInt(input.dataset.imagesRemaining, 10); }
+
+          let keeping = 0;
+          boxes.forEach(function (box) { if (! box.checked) { keeping++; } });
+
+          return total - keeping;
+          };
+
+          /* موقع انتخاب فقط شمارش - بدون ایراد، بدون قرمز. */
+          const showCount = function () {
           if (! note) { return; }
+          note.classList.remove('is-error');
+          note.textContent = picked() === 0 ? '' : picked() + ' تصویر انتخاب شد.';
+          };
 
-          if (picked > max) {
-          note.textContent = max > 0
-          ? 'فقط ' + max + ' تصویر دیگر می‌توانید اضافه کنید، ولی ' + picked + ' تا انتخاب کرده‌اید. چند تا را کم کنید.'
-          : 'این آگهی به سقف تصاویر رسیده است. برای افزودن تصویر تازه، اول چند تصویر قبلی را برای حذف تیک بزنید.';
-          note.classList.add('is-error');
-          input.value = '';
-          return;
+          const tooManyMessage = function () {
+
+          const max = capacity();
+          const extra = picked() - max;
+
+          if (max <= 0) {
+          return 'این آگهی به سقف ' + input.dataset.maxImages + ' تصویر رسیده است. '
+          + 'برای افزودن تصویر تازه، اول چند تصویر بالا را برای حذف تیک بزنید.';
           }
 
-          note.classList.remove('is-error');
-          note.textContent = picked === 0
-          ? ''
-          : picked + ' تصویر انتخاب شد.';
+          /* «دیگر» فقط در فرم ویرایش معنی دارد، که جای خالی می‌شمارد. */
+          const room = isEditForm
+          ? 'در این آگهی جا برای ' + max + ' تصویر دیگر هست'
+          : 'برای هر آگهی حداکثر ' + max + ' تصویر می‌توانید انتخاب کنید';
+
+          return room + '، ولی ' + picked() + ' تصویر انتخاب کرده‌اید. '
+          + 'لطفاً ' + extra + ' تصویر را کم کنید و دوباره امتحان کنید.';
+          };
+
+          input.addEventListener('change', showCount);
+
+          /* تیک حذف، ظرفیت را عوض می‌کند. */
+          if (form) {
+          form.addEventListener('change', function (event) {
+          if (event.target.name === 'delete_images[]') { showCount(); }
           });
+          }
+
+          if (! form) { return; }
+
+          const overLimit = function () { return picked() > capacity(); };
+
+          const complain = function () {
+          if (! note) { return; }
+          note.textContent = tooManyMessage();
+          note.classList.add('is-error');
+          };
+
+          /*
+           * چرا هم click و هم submit؟
+           *
+           * اعتبارسنجی خود مرورگر جلوی رویداد submit را می‌گیرد: اگر
+           * فیلد لازمِ دیگری خالی باشد، اصلاً submit شلیک نمی‌شود.
+           * یعنی با شنیدنِ تنها submit، کاربری که هم ۱۵ تصویر انتخاب
+           * کرده و هم آدرس را ننوشته، اول فقط از آدرس خبردار می‌شد و
+           * تازه دور بعد می‌فهمید تصویرها هم زیادی‌اند.
+           *
+           * پس پیام روی کلیکِ دکمه‌ی ثبت نوشته می‌شود - همان لحظه‌ای
+           * که کاربر منتظر جواب است - و جلوگیری از ارسال سرِ submit
+           * انجام می‌شود، که حرف آخر را می‌زند.
+           */
+          form.addEventListener('click', function (event) {
+
+          const trigger = event.target.closest(
+          'button[type="submit"], input[type="submit"], button:not([type])'
+          );
+
+          if (trigger && trigger.form === form && overLimit()) { complain(); }
+          });
+
+          form.addEventListener('submit', function (event) {
+
+          if (! overLimit()) { return; }
+
+          event.preventDefault();
+          complain();
+
+          (note || input).scrollIntoView({ behavior: 'smooth', block: 'center' });
+          });
+
           });
           })();
           </script>
@@ -721,12 +818,23 @@
           .filter(isLive)
           .every(f=>f.validity.valid);
 
+          /*
+           * فقط کلاس - نه aria-disabled.
+           *
+           * اول aria-disabled="true" گذاشته بودم، ولی آن یک دروغ بود:
+           * دکمه واقعاً غیرفعال نیست و کلیک‌کردنش کار مفیدی می‌کند
+           * (اعتبارسنجی مرورگر می‌گوید چه چیزی کم است). گفتنِ
+           * «غیرفعال» به صفحه‌خوان یعنی کاربرِ نابینا اصلاً امتحان
+           * نمی‌کند و آن راهنمایی را از دست می‌دهد - در حالی که
+           * کاربر بینا فقط یک دکمه‌ی کم‌رنگ می‌بیند و می‌زندش.
+           *
+           * ابزارهای خودکار هم همین را می‌فهمند: Playwright از کلیک
+           * روی aria-disabled امتناع کرد، که دقیقاً نشان داد این صفت
+           * چه چیزی را به بقیه اعلام می‌کند.
+           */
           const sync=()=>{
           const ok=ready();
-          buttons.forEach(b=>{
-          b.classList.toggle('is-locked',!ok);
-          b.setAttribute('aria-disabled',ok?'false':'true');
-          });
+          buttons.forEach(b=>b.classList.toggle('is-locked',!ok));
           };
 
           form.addEventListener('input',sync);
