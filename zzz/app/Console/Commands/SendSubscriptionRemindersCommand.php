@@ -237,38 +237,60 @@ class SendSubscriptionRemindersCommand extends Command
     | نمی‌گیرد، و پروفایل هم فقط نام کاربری را عوض می‌کند - یعنی چنین
     | کاربری هیچ‌وقت شماره پیدا نمی‌کند، ولی می‌تواند اشتراک بخرد.
     |
-    | پس اگر users.mobile خالی بود، سراغ شماره‌ی خودِ آگهی می‌رویم:
-    | همان که ارائه‌دهنده برای تماس مشتری‌ها نوشته، و مشتری‌ها هم
-    | همان را می‌گیرند. از آگهی‌های *همین نوع* اشتراک، تازه‌ترین.
+    | این وصله برای حساب‌های قدیمی است: از امروز، ثبت آگهی بدون
+    | شماره‌ی تأییدشده ممکن نیست (RequireMobile)، ولی کسانی که پیش
+    | از آن آگهی گذاشته‌اند همچنان شماره ندارند.
     |
-    | تلفن ثابت از قلم می‌افتد (پیامک نمی‌گیرد)، و normalize_mobile
-    | شکل‌های ۹۸+ و ۰۰۹۸ را هم یکدست می‌کند.
+    | پس اگر users.mobile خالی بود، سراغ شماره‌ی خودِ آگهی‌ها می‌رویم:
+    | همان که ارائه‌دهنده برای تماس مشتری‌ها نوشته.
+    |
+    | ⚠️ فقط وقتی *همه‌ی* آگهی‌هایش به یک شماره برسند.
+    |
+    | این شماره را خودِ کاربر تأیید نکرده و ما فقط حدس می‌زنیم مالِ
+    | اوست. اگر دو آگهی دو شماره‌ی متفاوت داشته باشند، معلوم نیست
+    | کدام دست اوست - شاید یکی شماره‌ی شریک یا کارگاه باشد. حدسِ
+    | غلط یعنی پیامکِ «اشتراکت تمام شد» به موبایل یک آدم بی‌خبر.
+    |
+    | مقایسه بعد از normalize_mobile انجام می‌شود، پس ۰۹۱۲…، ۹۸۹۱۲+
+    | و ۰۰۹۸۹۱۲… یک شماره حساب می‌شوند - نه سه تا.
+    |
+    | تلفن ثابت از قلم می‌افتد؛ پیامک نمی‌گیرد و پذیرفتنش یعنی یک
+    | «ارسال شد»ِ دروغ.
     |
     */
     private function reachableMobile(ServiceSubscription $subscription): ?string
     {
-        $candidates = [$subscription->user?->mobile];
+        $user = $subscription->user;
 
-        $adPhones = $subscription->user
-            ? $subscription->user->ads()
-                ->where('type', $subscription->type)
-                ->whereNotNull('phone')
-                ->latest('id')
-                ->pluck('phone')
-                ->all()
-            : [];
-
-        foreach (array_merge($candidates, $adPhones) as $candidate) {
-
-            $normalized = normalize_mobile($candidate);
-
-            /* موبایل ایران: ۱۱ رقم و با ۰۹ شروع می‌شود. */
-            if ($normalized && strlen($normalized) === 11 && str_starts_with($normalized, '09')) {
-                return $normalized;
-            }
+        if (! $user) {
+            return null;
         }
 
-        return null;
+        /* شماره‌ی خودِ حساب، که تأییدشده است، همیشه مقدم است. */
+        if ($mobile = $this->asMobile($user->mobile)) {
+            return $mobile;
+        }
+
+        $numbers = $user->ads()
+            ->whereNotNull('phone')
+            ->pluck('phone')
+            ->map(fn ($phone) => $this->asMobile($phone))
+            ->filter()
+            ->unique()
+            ->values();
+
+        /* صفر یعنی هیچ موبایلی نبود؛ بیشتر از یکی یعنی معلوم نیست کدام. */
+        return $numbers->count() === 1 ? $numbers->first() : null;
+    }
+
+    /* موبایل ایران: ۱۱ رقم، با ۰۹. هر چیز دیگر، null. */
+    private function asMobile(?string $value): ?string
+    {
+        $digits = normalize_mobile($value);
+
+        return $digits && strlen($digits) === 11 && str_starts_with($digits, '09')
+            ? $digits
+            : null;
     }
 
     /*

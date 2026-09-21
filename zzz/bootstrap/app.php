@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\EnsureOnlineCheckoutEnabled;
+use App\Http\Middleware\RequireMobile;
 use App\Models\Ad;
 use App\Models\ServiceSubscription;
 use Illuminate\Foundation\Application;
@@ -22,6 +23,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => AdminMiddleware::class,
             'checkout.enabled' => EnsureOnlineCheckoutEnabled::class,
+            'require.mobile' => RequireMobile::class,
         ]);
 
         /*

@@ -323,7 +323,7 @@ class SubscriptionReminderTest extends TestCase
     | «ارسال شد» می‌گوید و ستون پر می‌شود، در حالی که هیچ‌کس چیزی
     | دریافت نکرده.
     */
-    public function test_a_landline_on_the_ad_is_not_treated_as_reachable(): void
+    public function test_a_landline_alone_is_not_treated_as_reachable(): void
     {
         $user = $this->emailUser();
         $this->subscription($user, now()->addDays(5));
@@ -335,15 +335,69 @@ class SubscriptionReminderTest extends TestCase
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
     }
 
-    /* و آگهیِ نوع دیگر، شماره‌ی این اشتراک نیست. */
-    public function test_an_ad_of_the_other_type_is_not_borrowed(): void
+    /*
+    | ⚠️ فقط وقتی همه‌ی آگهی‌ها به یک شماره برسند.
+    |
+    | این شماره را کاربر تأیید نکرده و ما حدس می‌زنیم مالِ اوست. دو
+    | شماره‌ی متفاوت یعنی معلوم نیست کدام دست اوست - شاید یکی
+    | شماره‌ی شریک یا کارگاه باشد. پیامکِ «اشتراکت تمام شد» به
+    | موبایل یک آدم بی‌خبر، بدتر از نفرستادن است.
+    */
+    public function test_two_different_ad_phones_are_too_ambiguous_to_use(): void
     {
         $user = $this->emailUser();
         $this->subscription($user, now()->addDays(5));
-        $this->ad($user, '09127776655', 'product');
+        $this->ad($user, '09127776655');
+        $this->ad($user, '09354443322', 'product');
 
         $sms = $this->fakeSms();
         $sms->shouldReceive('sendRenewalReminder')->never();
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    /*
+    | ⚠️ و «یک شماره» یعنی بعد از یکدست‌کردن.
+    |
+    | یک آگهی ۰۹۱۲…، یکی ۹۸۹۱۲…+ و یکی ۰۰۹۸۹۱۲… - این‌ها سه شماره
+    | نیستند، یکی‌اند. بدون normalize_mobile، مقایسه‌ی رشته‌ای سه
+    | تای متفاوت می‌دید و پیامک اصلاً نمی‌رفت.
+    */
+    public function test_the_same_number_written_three_ways_still_counts_as_one(): void
+    {
+        $user = $this->emailUser();
+        $this->subscription($user, now()->addDays(5));
+        $this->ad($user, '09127776655');
+        $this->ad($user, '+989127776655', 'product');
+        $this->ad($user, '00989127776655');
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->once()->with(
+            '09127776655',
+            Mockery::any(),
+            Mockery::any()
+        );
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    /*
+    | تلفن ثابت شماره نیست، پس نباید یکتایی را هم به هم بزند: آگهیِ
+    | موبایل‌دار همچنان باید جواب بدهد.
+    */
+    public function test_a_landline_beside_a_mobile_does_not_block_the_send(): void
+    {
+        $user = $this->emailUser();
+        $this->subscription($user, now()->addDays(5));
+        $this->ad($user, '02133445566');
+        $this->ad($user, '09127776655', 'product');
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->once()->with(
+            '09127776655',
+            Mockery::any(),
+            Mockery::any()
+        );
 
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
     }

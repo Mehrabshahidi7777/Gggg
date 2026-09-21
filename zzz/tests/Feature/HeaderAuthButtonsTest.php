@@ -94,4 +94,59 @@ class HeaderAuthButtonsTest extends TestCase
             ->assertOk()
             ->assertDontSee('header-auth-group', false);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | هدرِ کاربرِ واردشده روی گوشی
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ این هدر با هدرِ مهمان فرق دارد، و تا امروز فقط حالتِ مهمان
+    | اندازه‌گیری شده بود.
+    |
+    | کاربرِ واردشده سه چیز در هدر دارد - «ثبت آگهی»، «پنل کاربری» و
+    | دکمه‌ی منو - و جمعشان با لوگو در صفحه‌ی ۳۶۰ پیکسلی ۴۱۵ می‌شد:
+    | ۴۲ پیکسل اسکرول افقی، در همه‌ی صفحه‌ها.
+    |
+    | در کرومیوم اندازه گرفته شد؛ اینجا قلاب‌هایش قفل می‌شود.
+    */
+    public function test_the_account_button_is_reachable_by_screen_readers(): void
+    {
+        $user = User::create([
+            'name' => 'کاربر',
+            'username' => 'member2',
+            'mobile' => '09120000010',
+            'password' => 'secret-password',
+        ]);
+
+        $html = $this->actingAs($user)->get(route('home'))->assertOk()->getContent();
+
+        /*
+        | روی گوشی متنِ کنارِ آیکون پنهان می‌شود، پس بدون aria-label
+        | دکمه برای صفحه‌خوان بی‌نام می‌ماند.
+        */
+        $this->assertMatchesRegularExpression(
+            '/<button[^>]*class="account-trigger"[^>]*aria-label="پنل کاربری"/u',
+            $html
+        );
+    }
+
+    public function test_the_signed_in_header_fits_a_phone(): void
+    {
+        $css = file_get_contents(base_path('../public_html/css/sazmat-theme.css'));
+
+        /* متنِ کنارِ آیکون روی گوشی برداشته می‌شود. */
+        $this->assertStringContainsString(
+            '.account-trigger > span:not([data-icon]) { display: none; }',
+            $css
+        );
+
+        /*
+        | و دکمه زیر ۴۴ پیکسل نمی‌رود: آیکونِ تنها هدفِ کوچکی است و
+        | کوچک‌تر از این با انگشت زده نمی‌شود.
+        */
+        $this->assertMatchesRegularExpression(
+            '/\.account-trigger\s*\{[^}]*min-height:\s*44px/s',
+            $css
+        );
+    }
 }

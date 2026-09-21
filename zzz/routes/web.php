@@ -21,6 +21,7 @@ use App\Http\Controllers\Front\AdEditController;
 use App\Http\Controllers\Front\ActivityController;
 use App\Http\Controllers\Front\FeaturedController;
 use App\Http\Controllers\Front\AdVisibilityController;
+use App\Http\Controllers\Front\MobileAttachController;
 
 
 /*
@@ -235,11 +236,40 @@ Route::middleware('auth')->group(function () {
     | Ad Submission
     */
 
+    /*
+    | ⚠️ require.mobile
+    |
+    | حسابی که با ایمیل ساخته شده هیچ شماره‌ای ندارد و پروفایل هم
+    | جایی برای افزودنش نداشت. نتیجه‌اش این بود که یادآوری تمدید
+    | اشتراک بی‌صدا رد می‌شد و آگهی‌هایش بی‌خبر تعلیق می‌شد.
+    |
+    | حالا قبل از اولین آگهی، شماره گرفته و تأیید می‌شود. کسی که با
+    | موبایل ثبت‌نام کرده اصلاً متوجه این مرحله نمی‌شود.
+    */
+
     Route::get('/submit-ad', [AdSubmitController::class, 'create'])
+        ->middleware('require.mobile')
         ->name('ad.create');
 
     Route::post('/submit-ad', [AdSubmitController::class, 'store'])
+        ->middleware('require.mobile')
         ->name('ad.store');
+
+
+    /*
+    | افزودن و تأیید شماره موبایل. توضیح کامل در MobileAttachController.
+    */
+
+    Route::get('/verify-mobile', [MobileAttachController::class, 'show'])
+        ->name('mobile.attach');
+
+    Route::post('/verify-mobile', [MobileAttachController::class, 'request'])
+        ->middleware('throttle:10,1')
+        ->name('mobile.attach.request');
+
+    Route::post('/verify-mobile/confirm', [MobileAttachController::class, 'verify'])
+        ->middleware('throttle:20,1')
+        ->name('mobile.attach.verify');
 
 
     /*
