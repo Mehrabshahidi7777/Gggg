@@ -213,7 +213,7 @@
                 <div class="field">
                     <label for="edit-phone">شماره تماس *</label>
                     <input id="edit-phone" type="text" name="phone" value="{{ old('phone', $ad->phone) }}"
-                           required dir="ltr" inputmode="numeric" maxlength="11" placeholder="09121234567">
+                           required dir="ltr" inputmode="numeric" maxlength="11" placeholder="0913•••••••">
                 </div>
 
                 {{--
