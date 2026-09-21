@@ -36,12 +36,21 @@ class SubscriptionReminderTest extends TestCase
         ]);
     }
 
-    private function subscription(User $user, $endsAt, string $status = 'active'): ServiceSubscription
-    {
+    private function subscription(
+        User $user,
+        $endsAt,
+        string $status = 'active',
+        string $type = 'service'
+    ): ServiceSubscription {
+        $plan = $type === 'service' ? $this->plan : ServicePlan::firstOrCreate(
+            ['type' => 'product', 'months' => 1],
+            ['title' => 'یک ماهه', 'price' => 150000, 'is_active' => true, 'sort_order' => 1]
+        );
+
         return ServiceSubscription::create([
-            'type' => 'service',
+            'type' => $type,
             'user_id' => $user->id,
-            'service_plan_id' => $this->plan->id,
+            'service_plan_id' => $plan->id,
             'amount' => 150000,
             'starts_at' => now()->subMonth(),
             'ends_at' => $endsAt,
@@ -252,14 +261,22 @@ class SubscriptionReminderTest extends TestCase
     | اضافه‌کردن یک کلمه به متن، کاری است که هیچ‌کس هنگام انجامش
     | متوجه هزینه‌اش نمی‌شود. این تست همان لحظه جلویش را می‌گیرد.
     |
-    | ۷۰ منهای متنِ ثابتِ پترن («اشتراک » + « شما » + «.» + خط دوم)
-    | می‌شود سقفِ مقدارها.
+    | ⚠️ «لغو11» هم شمرده می‌شود.
+    |
+    | آموت آن را خودش ته هر پیامک می‌چسباند. نسخه‌ی اول این تست
+    | حسابش نکرده بود و متنی را سبز کرد که در پنل ۷۱ کاراکتر شد -
+    | یعنی دقیقاً یک کاراکتر بیرون از یک صفحه. چیزی که اپراتور
+    | اضافه می‌کند هم بخشی از بودجه است.
     */
     public function test_the_message_still_fits_one_sms_page(): void
     {
-        /* متن ثابتِ پترن، بدون جای متغیرها. */
+        /*
+        | متن ثابتِ پترن (بدون جای متغیرها) به‌علاوه‌ی چیزی که آموت
+        | خودش می‌چسباند.
+        */
         $fixed = mb_strlen("اشتراک  شما .
-تمدید: sazmat.com");
+sazmat.com") + mb_strlen("
+لغو11");
 
         $sent = [];
 
@@ -269,14 +286,25 @@ class SubscriptionReminderTest extends TestCase
                 $sent[] = $values;
             });
 
-        /* هر سه مرحله در یک اجرا. */
-        $this->subscription($this->user('09120000001'), now()->addDays(5));
-        $this->subscription($this->user('09120000002'), now()->addHours(12));
-        $this->subscription($this->user('09120000003'), now()->subHour(), 'expired');
+        /*
+        | هر سه مرحله، و هر دو نوع اشتراک.
+        |
+        | ⚠️ «محصولات» دو حرف از «خدمات» بلندتر است - و نسخه‌ی اول
+        | این تست فقط خدمات می‌ساخت. همان دو حرف بود که ۶۹ را
+        | می‌کرد ۷۱: تست سبز می‌ماند و پیامک واقعی دو صفحه می‌شد.
+        */
+        $this->subscription($this->user('09120000001'), now()->addDays(5), 'active', 'product');
+        $this->subscription($this->user('09120000002'), now()->addHours(12), 'active', 'product');
+        $this->subscription($this->user('09120000003'), now()->subHour(), 'expired', 'product');
+        $this->subscription($this->user('09120000004'), now()->addDays(5));
+        $this->subscription($this->user('09120000005'), now()->addHours(12));
+        $this->subscription($this->user('09120000006'), now()->subHour(), 'expired');
 
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
 
-        $this->assertCount(3, $sent, 'هر سه مرحله باید پیامک بدهند.');
+        $this->assertCount(6, $sent, 'هر سه مرحله در هر دو نوع باید پیامک بدهند.');
+
+        $this->assertContains('محصولات', array_column($sent, 0), 'نوعِ بلندتر باید آزموده شود.');
 
         foreach ($sent as $values) {
 
