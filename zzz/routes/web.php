@@ -19,6 +19,7 @@ use App\Http\Controllers\Front\AdContactController;
 use App\Http\Controllers\Front\SitemapController;
 use App\Http\Controllers\Front\AdEditController;
 use App\Http\Controllers\Front\ActivityController;
+use App\Http\Controllers\Front\FeaturedController;
 
 
 /*
@@ -94,6 +95,14 @@ Route::get('/sitemap.xml', [SitemapController::class, 'index'])
 
 Route::get('/about', [PageController::class, 'about'])
     ->name('about');
+
+/*
+| همه‌ی آگهی‌های ویژه.
+|
+| صفحه‌ی اصلی سقف دارد و هر ساعت می‌چرخد؛ اینجا همه‌شان هستند.
+*/
+Route::get('/featured', [FeaturedController::class, 'index'])
+    ->name('featured');
 
 Route::get('/contact', [PageController::class, 'contact'])
     ->name('contact');

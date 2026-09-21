@@ -105,6 +105,18 @@
 
         </div>
 
+        {{--
+            فقط وقتی معنی دارد که چیزی بیرون از این صفحه مانده باشد.
+            اگر همه‌ی ویژه‌ها همین‌جا باشند، این لینک تکرار است.
+        --}}
+        @if($featuredProductsTotal > $featuredProducts->count())
+            <p class="featured-more">
+                <a href="{{ route('featured') }}">
+                    دیدن همه‌ی {{ number_format($featuredProductsTotal) }} محصول ویژه ←
+                </a>
+            </p>
+        @endif
+
     </div>
 </section>
 
@@ -132,6 +144,18 @@
             @endforelse
 
         </div>
+
+        {{--
+            فقط وقتی معنی دارد که چیزی بیرون از این صفحه مانده باشد.
+            اگر همه‌ی ویژه‌ها همین‌جا باشند، این لینک تکرار است.
+        --}}
+        @if($featuredServicesTotal > $featuredServices->count())
+            <p class="featured-more">
+                <a href="{{ route('featured') }}">
+                    دیدن همه‌ی {{ number_format($featuredServicesTotal) }} خدمت ویژه ←
+                </a>
+            </p>
+        @endif
 
     </div>
 </section>

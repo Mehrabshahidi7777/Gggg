@@ -56,15 +56,15 @@
             </label>
 
             <label class="chat-bubble__field">
-                <span>ایمیل</span>
-                <input type="email" name="email" required autocomplete="email"
-                       placeholder="برای اینکه بتوانیم پاسخ بدهیم">
+                <span>شماره تماس</span>
+                <input type="text" name="phone" required maxlength="15" inputmode="numeric"
+                       dir="ltr" data-digits-only autocomplete="tel"
+                       placeholder="برای اینکه بتوانیم جواب بدهیم">
             </label>
 
             <label class="chat-bubble__field">
-                <span>تلفن <i>(اختیاری)</i></span>
-                <input type="text" name="phone" maxlength="15" inputmode="numeric"
-                       dir="ltr" data-digits-only autocomplete="tel">
+                <span>ایمیل <i>(اختیاری)</i></span>
+                <input type="email" name="email" autocomplete="email">
             </label>
 
             <label class="chat-bubble__field">

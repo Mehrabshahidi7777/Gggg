@@ -39,12 +39,22 @@ class PageController extends Controller
             return $this->contactAccepted($r);
         }
 
+        /*
+        | تلفن اجباری است، ایمیل نه.
+        |
+        | این سایت بازار مصالح ساختمانی است؛ خیلی از مخاطبانش ایمیل
+        | ندارند یا نمی‌خواهند بدهند، ولی همه شماره دارند - و خودِ
+        | سایت هم با تماس تلفنی کار می‌کند. اجباری‌کردن ایمیل فقط
+        | اصطکاک بود، بی‌آنکه راه ارتباط بهتری بسازد.
+        */
         $data = $r->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'phone' => 'nullable|string|max:30',
+            'phone' => ['required', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:255'],
             'subject' => 'nullable|string|max:255',
             'message' => 'required|string|max:5000',
+        ], [
+            'phone.required' => 'شماره تماس را وارد کنید تا بتوانیم جواب بدهیم.',
         ]);
 
         ContactMessage::create($data);

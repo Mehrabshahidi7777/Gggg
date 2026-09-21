@@ -69,9 +69,13 @@ class ContactBubbleTest extends TestCase
     */
     public function test_a_message_sent_from_the_bubble_is_stored(): void
     {
+        /*
+        | بدون ایمیل - که حالا اختیاری است. همین تست اگر ایمیل
+        | می‌فرستاد، قانون تازه را اصلاً امتحان نمی‌کرد.
+        */
         $this->postJson(route('contact.store'), [
             'name' => 'مهراب',
-            'email' => 'mehrab@example.com',
+            'phone' => '09121234567',
             'message' => 'یک سؤال داشتم.',
             'opened_at' => encrypt(time() - 30),
         ])
@@ -94,7 +98,7 @@ class ContactBubbleTest extends TestCase
             'opened_at' => encrypt(time() - 30),
         ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['email', 'message']);
+            ->assertJsonValidationErrors(['phone', 'message']);
 
         $this->assertSame(0, ContactMessage::count());
     }
@@ -107,6 +111,7 @@ class ContactBubbleTest extends TestCase
     {
         $this->postJson(route('contact.store'), [
             'name' => 'Robertluh',
+            'phone' => '09121234567',
             'email' => 'spam@example.com',
             'message' => 'buy now',
             'website' => 'http://spam.example.com',
@@ -126,7 +131,7 @@ class ContactBubbleTest extends TestCase
     {
         $this->post(route('contact.store'), [
             'name' => 'مهراب',
-            'email' => 'mehrab@example.com',
+            'phone' => '09121234567',
             'message' => 'یک سؤال داشتم.',
             'opened_at' => encrypt(time() - 30),
         ])

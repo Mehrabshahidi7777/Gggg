@@ -77,13 +77,23 @@ class ButtonGateTest extends TestCase
     {
         $html = $this->get(route('contact'))->assertOk()->getContent();
 
-        foreach (['name', 'email'] as $field) {
+        /*
+        | ایمیل دیگر اجباری نیست و جایش را تلفن گرفته: این سایت بازار
+        | مصالح است و مخاطبش شماره دارد، نه لزوماً ایمیل.
+        */
+        foreach (['name', 'phone'] as $field) {
             $this->assertMatchesRegularExpression(
                 '/name="' . $field . '"[^>]*\srequired/s',
                 $html,
                 "فیلد {$field} در مارک‌آپ required نیست، ولی سرور لازمش دارد."
             );
         }
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/name="email"[^>]*\srequired/s',
+            $html,
+            'ایمیل دوباره اجباری شده است.'
+        );
 
         $this->assertMatchesRegularExpression('/<textarea[^>]*name="message"[^>]*\srequired/s', $html);
     }
