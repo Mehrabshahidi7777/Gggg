@@ -3,7 +3,7 @@
 @section('content')
 <div class="container" style="padding-top:32px;padding-bottom:60px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;">
-        <div><a href="{{ route('orders.index') }}" style="color:var(--color-blueprint);font-weight:700;">← پنل مشتری</a><h1 style="margin-top:10px;">سفارش {{ $order->order_number }}</h1><p style="color:var(--color-steel);margin-top:6px;">{{ $order->created_at->format('Y/m/d H:i') }}</p></div>
+        <div><a href="{{ route('orders.index') }}" style="color:var(--color-blueprint);font-weight:700;">← سفارش‌های من</a><h1 style="margin-top:10px;">سفارش {{ $order->order_number }}</h1><p style="color:var(--color-steel);margin-top:6px;">{{ $order->created_at->format('Y/m/d H:i') }}</p></div>
         <div style="font-size:1.25rem;font-weight:900;color:var(--color-blueprint);">{{ number_format($order->total_amount) }} تومان</div>
     </div>
 

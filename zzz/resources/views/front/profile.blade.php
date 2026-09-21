@@ -84,11 +84,26 @@
         <p style="color:var(--color-steel);">ورود با شماره موبایل موفقیت‌آمیز بود.</p>
     @endif
 
+    {{--
+        این لینک بی‌قید و شرط بود و حالا که /my-orders برای کسی که
+        سفارشی ندارد ۴۰۴ می‌دهد، تبدیل به یک لینک شکسته می‌شد.
+
+        جای همیشگی‌اش را «فعالیت‌های من» گرفته، که برای هر کاربری
+        چیزی برای نشان دادن دارد.
+    --}}
     <div style="margin-top:24px;">
-        <a href="{{ route('orders.index') }}" style="color:var(--color-blueprint);font-weight:700;">
-            مشاهده سفارش‌های من ←
+        <a href="{{ route('activity') }}" style="color:var(--color-blueprint);font-weight:700;">
+            فعالیت‌های من ←
         </a>
     </div>
+
+    @if(auth()->user()->orders()->exists())
+        <div style="margin-top:12px;">
+            <a href="{{ route('orders.index') }}" style="color:var(--color-blueprint);font-weight:700;">
+                مشاهده سفارش‌های من ←
+            </a>
+        </div>
+    @endif
 
 </div>
 

@@ -127,10 +127,56 @@ class PageRenderTest extends TestCase
             ->assertSee('پنل ارائه محصولات', false);
     }
 
-    public function test_order_history_stays_reachable_while_checkout_is_disabled(): void
+    /*
+    | تاریخچه‌ی سفارش برای کسی که سفارش دارد باز می‌ماند، حتی وقتی
+    | خرید آنلاین خاموش است. سفارش‌های قدیمی نباید از دسترس صاحبشان
+    | خارج شوند.
+    |
+    | این تست قبلاً بدون ساختن سفارش هم سبز بود، چون آن موقع صفحه
+    | برای همه باز بود و یک جدول خالی نشان می‌داد. حالا که برای
+    | بی‌سفارش‌ها ۴۰۴ است، سفارش واقعی لازم دارد - و همین است که
+    | تست را معنادار می‌کند.
+    */
+    public function test_order_history_stays_reachable_for_someone_who_has_orders(): void
     {
+        \App\Models\Order::create([
+            'order_number' => 'SZ-TEST-1',
+            'buyer_id' => $this->owner->id,
+            'total_amount' => 250000,
+            'phone' => '09121234567',
+            'address' => 'آدرس',
+            'status' => 'completed',
+        ]);
+
         $this->actingAs($this->owner)
             ->get(route('orders.index'))
             ->assertOk();
+    }
+
+    /*
+    | و برای بقیه ۴۰۴ است. این صفحه از منو برداشته شده و جایش را
+    | «فعالیت‌های من» گرفته، ولی آدرسش باز مانده بود - یعنی هرکسی
+    | مستقیم می‌زدش باز هم همان جدول خالی را می‌دید.
+    */
+    public function test_order_history_is_gone_for_someone_with_no_orders(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('orders.index'))
+            ->assertNotFound();
+    }
+
+    /*
+    | صفحه‌ی پروفایل بی‌قید و شرط به همان آدرس لینک می‌داد، پس با این
+    | تغییر تبدیل به یک لینک شکسته می‌شد.
+    */
+    public function test_the_profile_does_not_link_to_a_page_that_would_404(): void
+    {
+        $html = $this->actingAs($this->owner)
+            ->get(route('profile'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringNotContainsString(route('orders.index'), $html);
+        $this->assertStringContainsString(route('activity'), $html);
     }
 }
