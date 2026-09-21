@@ -1116,3 +1116,21 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
   .activity-row { align-items: flex-start; flex-direction: column; }
   .activity-row__side { width: 100%; justify-content: space-between; }
 }
+
+/* ==========================================================================
+   تله‌ی ربات
+   ==========================================================================
+
+   فیلدی که فقط ربات پرش می‌کند. از چشم پنهان است ولی در HTML هست، چون
+   ربات فرم را از روی HTML پر می‌کند نه از روی چیزی که دیده می‌شود.
+
+   display:none عمداً نیست: بعضی ربات‌ها همان را چک می‌کنند و فیلدهای
+   display:none را رد می‌کنند. بیرون بردن از کادر دید کمتر لو می‌رود.
+   ========================================================================== */
+.hp-field {
+  position: absolute;
+  inset-inline-start: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

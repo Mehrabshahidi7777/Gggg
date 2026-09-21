@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\ContactMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 
 class PageController extends Controller
@@ -23,6 +24,21 @@ class PageController extends Controller
 
     public function contactStore(Request $r)
     {
+        /*
+        | ربات‌ها این فرم را پیدا کرده‌اند: از شش پیام رسیده، پنج تا
+        | تبلیغاتِ خودکار بود.
+        |
+        | ⚠️ به ربات گفته نمی‌شود که گیر افتاده.
+        |
+        | همان پیام موفقیت برمی‌گردد، فقط چیزی ذخیره نمی‌شود. اگر
+        | خطا بدهیم، نویسنده‌ی ربات می‌فهمد کجا گیر کرده و دورش
+        | می‌زند؛ این‌طور فکر می‌کند کارش گرفته و سراغ کار دیگری
+        | می‌رود.
+        */
+        if ($this->looksAutomated($r)) {
+            return back()->with('success', 'پیام شما با موفقیت ارسال شد.');
+        }
+
         $data = $r->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email',
@@ -34,6 +50,59 @@ class PageController extends Controller
         ContactMessage::create($data);
 
         return back()->with('success', 'پیام شما با موفقیت ارسال شد.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | تله‌ی ربات
+    |--------------------------------------------------------------------------
+    |
+    | بدون کپچا، چون کپچا را آدمِ واقعی هم باید حل کند و برای فرمی که
+    | ماهی چند پیام واقعی می‌گیرد هزینه‌اش بیشتر از فایده‌اش است.
+    |
+    | دو نشانه که ربات را لو می‌دهد و آدم هرگز تولیدش نمی‌کند:
+    |
+    |   ۱. فیلدی که در صفحه دیده نمی‌شود ولی پر شده است. ربات فرم را
+    |      از روی HTML پر می‌کند و نمی‌داند این یکی از چشم پنهان است.
+    |
+    |   ۲. فرمی که کمتر از سه ثانیه بعد از باز شدن ارسال شده. آدم در
+    |      سه ثانیه نه نام می‌نویسد نه ایمیل نه متن پیام.
+    |
+    */
+    private function looksAutomated(Request $request): bool
+    {
+        if (filled($request->input('website'))) {
+            Log::info('contact form: honeypot filled');
+
+            return true;
+        }
+
+        /*
+        | زمانِ باز شدن فرم، رمزگذاری‌شده تا دست‌کاری‌شدنی نباشد.
+        |
+        | اگر نبود یا خوانده نشد، *مانع نمی‌شویم*: ممکن است صفحه از
+        | کش مرورگر آمده باشد یا نسخه‌ی قدیمیِ فرم باشد، و مسدودکردن
+        | یک مشتری واقعی خیلی بدتر از رد شدن یک اسپم است.
+        */
+        $token = $request->input('opened_at');
+
+        if (! is_string($token) || $token === '') {
+            return false;
+        }
+
+        try {
+            $openedAt = (int) decrypt($token);
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        if (time() - $openedAt < 3) {
+            Log::info('contact form: submitted too fast');
+
+            return true;
+        }
+
+        return false;
     }
 
     /*
