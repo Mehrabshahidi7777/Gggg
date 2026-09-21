@@ -125,6 +125,63 @@ class ButtonGateTest extends TestCase
     }
 
     /*
+    |--------------------------------------------------------------------------
+    | رمزنگهدار مرورگر
+    |--------------------------------------------------------------------------
+    |
+    | مرورگر روی input[type=password] گزینه‌ی «کپی» را حذف می‌کند - یک
+    | قاعده‌ی امنیتی است تا رمز وارد کلیپ‌بورد نشود، و در هر سایتی
+    | همین‌طور است. پس کاربر نمی‌تواند رمز را از فیلد اول کپی و در
+    | «تکرار رمز عبور» پیست کند.
+    |
+    | راهش کپی‌کردن نیست، رمزنگهدار است: با این صفت‌ها گوشی می‌فهمد
+    | اینجا چه خبر است، رمز قوی پیشنهاد می‌دهد و هر دو فیلد را با هم
+    | پر می‌کند. بدون آنها اصلاً پیشنهاد ذخیره هم نمی‌دهد.
+    |
+    | new-password روی هر دو فیلد ثبت‌نام لازم است؛ همین به مرورگر
+    | می‌گوید این یک رمزِ تازه است، نه رمز موجود.
+    */
+    public function test_the_login_form_is_readable_by_a_password_manager(): void
+    {
+        $html = $this->get(route('login'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/name="email"[^>]*autocomplete="username"/s', $html);
+        $this->assertMatchesRegularExpression('/id="login-password"[^>]*autocomplete="current-password"/s', $html);
+    }
+
+    public function test_both_register_password_fields_announce_a_new_password(): void
+    {
+        $html = $this->get(route('register'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/id="register-password"[^>]*autocomplete="new-password"/s',
+            $html
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/id="register-password-confirmation"[^>]*autocomplete="new-password"/s',
+            $html,
+            'فیلد تکرار رمز new-password ندارد، پس رمزنگهدار آن را با هم پر نمی‌کند.'
+        );
+    }
+
+    /*
+    | و هیچ‌جا نباید چیزی کپی یا پیست را مسدود کند. بستن پیست روی فیلد
+    | رمز یک ضدالگوی رایج است: کاربرِ رمزنگهدار را مجبور به تایپ دستی
+    | می‌کند و نتیجه‌اش رمزهای کوتاه‌تر و ضعیف‌تر است.
+    */
+    public function test_nothing_blocks_pasting_into_the_password_fields(): void
+    {
+        foreach (['login', 'register'] as $route) {
+            $html = $this->get(route($route))->assertOk()->getContent();
+
+            $this->assertStringNotContainsString('onpaste', $html);
+            $this->assertStringNotContainsString('oncopy', $html);
+            $this->assertStringNotContainsString('oncut', $html);
+        }
+    }
+
+    /*
     | خودِ کلاس هم باید در CSS تعریف شده باشد - وگرنه اسکریپت کلاسی
     | می‌گذارد که هیچ اثری ندارد و هیچ‌کس متوجه نمی‌شود.
     */

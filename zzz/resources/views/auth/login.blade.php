@@ -25,6 +25,7 @@
         value="{{ old('email') }}"
         class="w-full rounded-lg border"
         placeholder="ایمیل"
+        autocomplete="username"
         required
     >
 
@@ -35,6 +36,7 @@
             type="password"
             class="w-full rounded-lg border pl-12"
             placeholder="رمز عبور"
+            autocomplete="current-password"
             required
         >
 
