@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Ad;
+use App\Models\Category;
+use App\Models\City;
+use App\Models\Province;
 use App\Models\ServicePlan;
 use App\Models\ServiceSubscription;
 use App\Models\User;
@@ -55,6 +59,43 @@ class SubscriptionReminderTest extends TestCase
             'starts_at' => now()->subMonth(),
             'ends_at' => $endsAt,
             'status' => $status,
+        ]);
+    }
+
+    /* کاربری که با ایمیل ثبت‌نام کرده: هیچ شماره‌ای ندارد. */
+    private function emailUser(): User
+    {
+        return User::create([
+            'name' => 'بدون موبایل',
+            'username' => 'nomobile',
+            'email' => 'x@example.com',
+            'password' => 'secret-password',
+        ]);
+    }
+
+    private function ad(User $user, string $phone, string $type = 'service'): Ad
+    {
+        $province = Province::firstOrCreate(['slug' => 'tehran'], ['name' => 'تهران']);
+        $city = City::firstOrCreate(
+            ['slug' => 'tehran', 'province_id' => $province->id],
+            ['name' => 'تهران']
+        );
+        $category = Category::firstOrCreate(
+            ['slug' => 'cat-' . $type],
+            ['name' => 'دسته', 'type' => $type, 'is_active' => true]
+        );
+
+        return Ad::create([
+            'user_id' => $user->id,
+            'category_id' => $category->id,
+            'province_id' => $province->id,
+            'city_id' => $city->id,
+            'type' => $type,
+            'title' => 'آگهی آزمایشی',
+            'price' => 1000,
+            'address' => 'آدرس',
+            'phone' => $phone,
+            'status' => 'approved',
         ]);
     }
 
@@ -219,14 +260,7 @@ class SubscriptionReminderTest extends TestCase
 
     public function test_user_without_mobile_is_skipped_without_error(): void
     {
-        $user = User::create([
-            'name' => 'بدون موبایل',
-            'username' => 'nomobile',
-            'email' => 'x@example.com',
-            'password' => 'secret-password',
-        ]);
-
-        $subscription = $this->subscription($user, now()->addDays(5));
+        $subscription = $this->subscription($this->emailUser(), now()->addDays(5));
 
         $sms = $this->fakeSms();
         $sms->shouldReceive('sendRenewalReminder')->never();
@@ -234,6 +268,84 @@ class SubscriptionReminderTest extends TestCase
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
 
         $this->assertNotNull($subscription->fresh()->reminder_7d_sent_at);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ارائه‌دهنده‌ای که موبایل ندارد
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ ثبت‌نام با ایمیل اصلاً شماره نمی‌گیرد، و پروفایل هم فقط نام
+    | کاربری را عوض می‌کند - یعنی چنین کاربری هیچ راهی برای افزودن
+    | شماره ندارد، ولی می‌تواند اشتراک بخرد.
+    |
+    | تا امروز یادآوری‌اش بی‌صدا رد می‌شد: اشتراک تمام می‌شد،
+    | آگهی‌هایش تعلیق می‌شد، و هیچ‌کس نمی‌فهمید چرا.
+    |
+    | حالا سراغ شماره‌ی خودِ آگهی می‌رویم - همان که مشتری‌ها هم
+    | می‌گیرند.
+    */
+    public function test_the_ad_phone_is_used_when_the_user_has_no_mobile(): void
+    {
+        $user = $this->emailUser();
+        $this->subscription($user, now()->addDays(5));
+        $this->ad($user, '09127776655');
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->once()->with(
+            '09127776655',
+            Mockery::any(),
+            Mockery::any()
+        );
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    /* شماره‌ی خودِ حساب مقدم است؛ آگهی فقط جایگزین است. */
+    public function test_the_account_mobile_wins_over_the_ad_phone(): void
+    {
+        $user = $this->user('09121112233');
+        $this->subscription($user, now()->addDays(5));
+        $this->ad($user, '09127776655');
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->once()->with(
+            '09121112233',
+            Mockery::any(),
+            Mockery::any()
+        );
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    /*
+    | تلفن ثابت پیامک نمی‌گیرد، پس به حساب نمی‌آید - وگرنه سامانه
+    | «ارسال شد» می‌گوید و ستون پر می‌شود، در حالی که هیچ‌کس چیزی
+    | دریافت نکرده.
+    */
+    public function test_a_landline_on_the_ad_is_not_treated_as_reachable(): void
+    {
+        $user = $this->emailUser();
+        $this->subscription($user, now()->addDays(5));
+        $this->ad($user, '02133445566');
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->never();
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    /* و آگهیِ نوع دیگر، شماره‌ی این اشتراک نیست. */
+    public function test_an_ad_of_the_other_type_is_not_borrowed(): void
+    {
+        $user = $this->emailUser();
+        $this->subscription($user, now()->addDays(5));
+        $this->ad($user, '09127776655', 'product');
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->never();
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
     }
 
     public function test_dry_run_sends_nothing(): void

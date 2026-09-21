@@ -108,9 +108,31 @@ class SendSubscriptionRemindersCommand extends Command
                     continue;
                 }
 
-                $mobile = $subscription->user?->mobile;
+                $mobile = $this->reachableMobile($subscription);
 
+                /*
+                | هیچ شماره‌ای پیدا نشد.
+                |
+                | ⚠️ این حالت بی‌صدا نمی‌ماند.
+                |
+                | ارائه‌دهنده‌ای که با ایمیل ثبت‌نام کرده شماره‌ی موبایل
+                | ندارد و در پروفایل هم جایی برای افزودنش نیست. اگر
+                | فقط رد می‌شدیم، اشتراکش بی‌خبر تمام می‌شد، آگهی‌هایش
+                | تعلیق می‌شد، و هیچ‌کس - نه او، نه شما - نمی‌فهمید
+                | چرا. پس در لاگ می‌نشیند تا در cron.log دیده شود.
+                */
                 if (! $mobile) {
+
+                    Log::warning('subscription reminder skipped: no mobile', [
+                        'subscription_id' => $subscription->id,
+                        'user_id' => $subscription->user_id,
+                        'stage' => $column,
+                    ]);
+
+                    $this->warn(
+                        "  ⚠️ اشتراک {$subscription->id}: هیچ شماره‌ای برای تماس نیست."
+                    );
+
                     $subscription->forceFill([$column => now()])->save();
                     continue;
                 }
@@ -202,6 +224,51 @@ class SendSubscriptionRemindersCommand extends Command
         $this->line("یادآوری {$label}: {$count} مورد");
 
         return $count;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | شماره‌ای که واقعاً می‌شود به آن پیامک زد
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ هر ارائه‌دهنده‌ای موبایل ندارد.
+    |
+    | ثبت‌نام دو راه دارد: ایمیل یا موبایل. راهِ ایمیل اصلاً شماره
+    | نمی‌گیرد، و پروفایل هم فقط نام کاربری را عوض می‌کند - یعنی چنین
+    | کاربری هیچ‌وقت شماره پیدا نمی‌کند، ولی می‌تواند اشتراک بخرد.
+    |
+    | پس اگر users.mobile خالی بود، سراغ شماره‌ی خودِ آگهی می‌رویم:
+    | همان که ارائه‌دهنده برای تماس مشتری‌ها نوشته، و مشتری‌ها هم
+    | همان را می‌گیرند. از آگهی‌های *همین نوع* اشتراک، تازه‌ترین.
+    |
+    | تلفن ثابت از قلم می‌افتد (پیامک نمی‌گیرد)، و normalize_mobile
+    | شکل‌های ۹۸+ و ۰۰۹۸ را هم یکدست می‌کند.
+    |
+    */
+    private function reachableMobile(ServiceSubscription $subscription): ?string
+    {
+        $candidates = [$subscription->user?->mobile];
+
+        $adPhones = $subscription->user
+            ? $subscription->user->ads()
+                ->where('type', $subscription->type)
+                ->whereNotNull('phone')
+                ->latest('id')
+                ->pluck('phone')
+                ->all()
+            : [];
+
+        foreach (array_merge($candidates, $adPhones) as $candidate) {
+
+            $normalized = normalize_mobile($candidate);
+
+            /* موبایل ایران: ۱۱ رقم و با ۰۹ شروع می‌شود. */
+            if ($normalized && strlen($normalized) === 11 && str_starts_with($normalized, '09')) {
+                return $normalized;
+            }
+        }
+
+        return null;
     }
 
     /*
