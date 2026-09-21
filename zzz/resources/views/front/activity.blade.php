@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title','فعالیت من')
+@section('title','فعالیت‌های من')
 @section('meta_description','امتیازها، نظرها و شماره‌هایی که در سازمت دیده‌اید.')
 
 @section('content')
@@ -7,7 +7,7 @@
 
     <div class="activity-head">
         <div>
-            <h1>فعالیت من</h1>
+            <h1>فعالیت‌های من</h1>
             <p>امتیازها و نظرهایی که ثبت کرده‌ای، و شماره‌هایی که دیده‌ای.</p>
         </div>
         <a href="{{ route('products') }}" class="btn btn-navy">مشاهده محصولات</a>

@@ -229,7 +229,7 @@
                امتیازها، نظرها و شماره‌هایی که دیده. سفارش‌های قدیمی
                از داخل همان صفحه در دسترس‌اند، آن هم فقط برای کسی که
                سفارشی دارد. --}}
-          <a href="{{ route('activity') }}"><span data-icon="users"></span><span>فعالیت من</span></a>
+          <a href="{{ route('activity') }}"><span data-icon="users"></span><span>فعالیت‌های من</span></a>
 
           @if(auth()->user()->is_admin)
           <a href="{{ route('admin.dashboard') }}"><span data-icon="dashboard"></span><span>مدیریت</span></a>

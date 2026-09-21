@@ -14,7 +14,7 @@ use Tests\TestCase;
 
 /*
 |--------------------------------------------------------------------------
-| پنل کاربر: فعالیت من
+| پنل کاربر: فعالیت‌های من
 |--------------------------------------------------------------------------
 |
 | «پنل مشتری» سفارش‌ها را نشان می‌داد، ولی خرید آنلاین خاموش است و
@@ -71,7 +71,7 @@ class ActivityPanelTest extends TestCase
     {
         $html = $this->actingAs($this->user)->get(route('home'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('فعالیت من', $html);
+        $this->assertStringContainsString('فعالیت‌های من', $html);
         $this->assertStringContainsString(route('activity'), $html);
 
         /*
