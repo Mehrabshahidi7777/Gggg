@@ -319,6 +319,8 @@
           </div>
           </footer>
 
+          @include('partials.contact-bubble')
+
           @stack('scripts')
 
           <script>
@@ -893,6 +895,97 @@
            */
           document.addEventListener('click',()=>{
           setTimeout(()=>syncers.forEach(s=>s()),0);
+          });
+
+          });
+          </script>
+
+          {{--
+          حباب گفت‌وگو.
+
+          فرم با fetch فرستاده می‌شود تا صفحه رفرش نشود و کاربر جایی که
+          بود بماند. اگر جاوااسکریپت نباشد، همان فرم معمولی ارسال
+          می‌شود و کنترلر با back() جواب می‌دهد - پس بدون JS هم کار
+          می‌کند، فقط با رفرش.
+          --}}
+          <script>
+          document.addEventListener('DOMContentLoaded',()=>{
+
+          const root=document.querySelector('[data-chat]');
+          if(!root) return;
+
+          const fab=root.querySelector('[data-chat-toggle]');
+          const panel=root.querySelector('#chat-bubble-panel');
+          const form=root.querySelector('[data-chat-form]');
+          const done=root.querySelector('[data-chat-done]');
+          const errorBox=root.querySelector('[data-chat-error]');
+
+          const open=(yes)=>{
+          panel.hidden=!yes;
+          fab.setAttribute('aria-expanded',yes?'true':'false');
+          root.classList.toggle('is-open',yes);
+          if(yes){ panel.querySelector('input[name="name"]')?.focus(); }
+          else { fab.focus(); }
+          };
+
+          fab.addEventListener('click',()=>open(panel.hidden));
+          root.querySelectorAll('[data-chat-close]').forEach(b=>b.addEventListener('click',()=>open(false)));
+
+          document.addEventListener('keydown',e=>{
+          if(e.key==='Escape'&&!panel.hidden) open(false);
+          });
+
+          /*
+           * کلیک بیرون از پنل آن را می‌بندد. contains() لازم است چون
+           * کلیک روی خودِ پنل هم به سند می‌رسد.
+           */
+          document.addEventListener('click',e=>{
+          if(!panel.hidden&&!root.contains(e.target)) open(false);
+          });
+
+          form.addEventListener('submit',async e=>{
+
+          e.preventDefault();
+
+          const button=form.querySelector('[type="submit"]');
+          const previous=button.textContent;
+
+          button.disabled=true;
+          button.textContent='در حال ارسال…';
+          errorBox.hidden=true;
+
+          try{
+          const response=await fetch(form.action,{
+          method:'POST',
+          body:new FormData(form),
+          headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'},
+          credentials:'same-origin'
+          });
+
+          const data=await response.json().catch(()=>({}));
+
+          if(response.ok&&data.success){
+          form.hidden=true;
+          done.hidden=false;
+          return;
+          }
+
+          /*
+           * ۴۲۲ یعنی اعتبارسنجی سرور. پیام‌ها در data.errors است و
+           * اولین پیام هر فیلد برای کاربر کافی است.
+           */
+          const messages=Object.values(data.errors||{}).flat();
+          errorBox.textContent=messages.length?messages.join(' ')
+          :'ارسال نشد. لطفاً دوباره تلاش کنید.';
+          errorBox.hidden=false;
+
+          }catch(error){
+          errorBox.textContent='ارتباط برقرار نشد. اینترنت را بررسی کنید.';
+          errorBox.hidden=false;
+          }finally{
+          button.disabled=false;
+          button.textContent=previous;
+          }
           });
 
           });

@@ -36,7 +36,7 @@ class PageController extends Controller
         | می‌رود.
         */
         if ($this->looksAutomated($r)) {
-            return back()->with('success', 'پیام شما با موفقیت ارسال شد.');
+            return $this->contactAccepted($r);
         }
 
         $data = $r->validate([
@@ -49,7 +49,28 @@ class PageController extends Controller
 
         ContactMessage::create($data);
 
-        return back()->with('success', 'پیام شما با موفقیت ارسال شد.');
+        return $this->contactAccepted($r);
+    }
+
+    /*
+    | یک پاسخ، دو شکل.
+    |
+    | فرم صفحه‌ی «تماس با ما» معمولی ارسال می‌شود و پیام موفقیت را
+    | در فلش می‌خواهد. حباب گفت‌وگو با fetch می‌فرستد و می‌خواهد بدون
+    | رفرش، همان‌جا تشکر را نشان بدهد.
+    |
+    | خطاهای اعتبارسنجی را لازم نیست اینجا دست بزنیم: لاراول برای
+    | درخواستی که JSON می‌خواهد خودش ۴۲۲ با فهرست خطاها برمی‌گرداند.
+    */
+    private function contactAccepted(Request $request)
+    {
+        $message = 'پیام شما با موفقیت ارسال شد.';
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $message]);
+        }
+
+        return back()->with('success', $message);
     }
 
     /*
