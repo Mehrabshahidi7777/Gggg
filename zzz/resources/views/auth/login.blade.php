@@ -16,7 +16,7 @@
 
 <div id="email-panel" class="auth-panel">
 
-<form method="POST" action="{{ route('login.store') }}" class="mt-6 space-y-4">
+<form method="POST" action="{{ route('login.store') }}" class="mt-6 space-y-4" data-gate>
     @csrf
 
     <input
@@ -25,6 +25,7 @@
         value="{{ old('email') }}"
         class="w-full rounded-lg border"
         placeholder="ایمیل"
+        required
     >
 
     <div class="relative">
@@ -34,6 +35,7 @@
             type="password"
             class="w-full rounded-lg border pl-12"
             placeholder="رمز عبور"
+            required
         >
 
         <button
@@ -54,6 +56,7 @@
         type="submit"
         id="email-login-button"
         class="btn-primary w-full"
+        data-gate-submit
     >
         ورود
     </button>
@@ -67,6 +70,7 @@
     method="POST"
     action="{{ route('login.mobile.request') }}"
     class="mt-6 space-y-4"
+    data-gate
 >
     @csrf
 
@@ -90,7 +94,7 @@
         <div class="text-red-600 text-sm">{{ $message }}</div>
     @enderror
 
-    <button class="btn-primary w-full">
+    <button class="btn-primary w-full" data-gate-submit>
         ارسال کد تأیید
     </button>
 

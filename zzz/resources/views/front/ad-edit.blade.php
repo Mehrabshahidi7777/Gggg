@@ -90,7 +90,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('ad.edit.store', $ad) }}" enctype="multipart/form-data" class="corner-card" style="padding:26px;">
+        <form method="POST" action="{{ route('ad.edit.store', $ad) }}" enctype="multipart/form-data" class="corner-card" style="padding:26px;" data-gate>
             @csrf
             @method('PUT')
 
@@ -290,7 +290,7 @@
                 >
             </div>
 
-            <button class="btn btn-navy" type="submit" style="margin-top:26px;">ثبت درخواست ویرایش</button>
+            <button class="btn btn-navy" type="submit" style="margin-top:26px;" data-gate-submit>ثبت درخواست ویرایش</button>
 
         </form>
 

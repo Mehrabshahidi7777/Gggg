@@ -18,6 +18,15 @@ class ContactRevealTest extends TestCase
     private Ad $ad;
     private User $owner;
 
+    /*
+    | این تست‌ها قبلاً مهمان بودند، چون دیدن شماره باز بود. حالا
+    | نیاز به حساب دارد و قاعده‌ی تازه جای خودش تست می‌شود:
+    | ContactRevealRequiresAuthTest. اینجا بازدیدکننده وارد شده تا
+    | چیزی که واقعاً موضوع این فایل است - ضد اسکرپ، شمارش سرنخ و
+    | نگه‌نداشتن IP خام - همچنان تست شود.
+    */
+    private User $visitor;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -30,6 +39,11 @@ class ContactRevealTest extends TestCase
         $province = Province::create(['name' => 'تهران', 'slug' => 'tehran']);
         $city = City::create(['name' => 'تهران', 'slug' => 'tehran', 'province_id' => $province->id]);
         $category = Category::create(['name' => 'د', 'slug' => 'd', 'type' => 'product', 'is_active' => true]);
+
+        $this->visitor = User::create([
+            'name' => 'بازدیدکننده', 'username' => 'visitor',
+            'mobile' => '09120000002', 'password' => 'secret-password',
+        ]);
 
         $this->ad = Ad::create([
             'user_id' => $this->owner->id,
@@ -58,14 +72,15 @@ class ContactRevealTest extends TestCase
 
     public function test_phone_is_returned_by_the_contact_endpoint(): void
     {
-        $this->postJson(route('ad.contact', $this->ad))
+        $this->actingAs($this->visitor)
+            ->postJson(route('ad.contact', $this->ad))
             ->assertOk()
             ->assertJson(['success' => true, 'phone' => '09121234567']);
     }
 
     public function test_reveal_is_recorded_as_a_lead(): void
     {
-        $this->postJson(route('ad.contact', $this->ad))->assertOk();
+        $this->actingAs($this->visitor)->postJson(route('ad.contact', $this->ad))->assertOk();
 
         $this->assertDatabaseCount('ad_contact_reveals', 1);
         $this->assertDatabaseHas('ad_contact_reveals', ['ad_id' => $this->ad->id]);
@@ -77,6 +92,8 @@ class ContactRevealTest extends TestCase
     */
     public function test_same_visitor_counted_once_per_day(): void
     {
+        $this->actingAs($this->visitor);
+
         $this->postJson(route('ad.contact', $this->ad))->assertOk();
         $this->postJson(route('ad.contact', $this->ad))->assertOk();
         $this->postJson(route('ad.contact', $this->ad))->assertOk();
@@ -100,12 +117,14 @@ class ContactRevealTest extends TestCase
     {
         $this->ad->update(['is_suspended' => true, 'suspended_at' => now()]);
 
-        $this->postJson(route('ad.contact', $this->ad))->assertNotFound();
+        $this->actingAs($this->visitor)
+            ->postJson(route('ad.contact', $this->ad))
+            ->assertNotFound();
     }
 
     public function test_raw_ip_is_never_stored(): void
     {
-        $this->postJson(route('ad.contact', $this->ad))->assertOk();
+        $this->actingAs($this->visitor)->postJson(route('ad.contact', $this->ad))->assertOk();
 
         $reveal = AdContactReveal::first();
 

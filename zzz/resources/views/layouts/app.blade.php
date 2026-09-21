@@ -224,7 +224,12 @@
           <a href="{{ route('seller.panel') }}"><span data-icon="building"></span><span>سفارش‌های در جریان</span></a>
           @endif
 
-          <a href="{{ route('orders.index') }}"><span data-icon="box"></span><span>پنل مشتری</span></a>
+          {{-- «پنل مشتری» اینجا بود و چون خرید آنلاین خاموش است همیشه
+               سه صفر نشان می‌داد. جایش را فعالیت واقعیِ کاربر گرفت:
+               امتیازها، نظرها و شماره‌هایی که دیده. سفارش‌های قدیمی
+               از داخل همان صفحه در دسترس‌اند، آن هم فقط برای کسی که
+               سفارشی دارد. --}}
+          <a href="{{ route('activity') }}"><span data-icon="users"></span><span>فعالیت من</span></a>
 
           @if(auth()->user()->is_admin)
           <a href="{{ route('admin.dashboard') }}"><span data-icon="dashboard"></span><span>مدیریت</span></a>
@@ -615,6 +620,18 @@
 
           const data=await response.json().catch(()=>({}));
 
+          /*
+           * مهمان: سرور مقصد را در سشن گذاشته، پس بعد از ثبت‌نام
+           * کاربر به همین آگهی برمی‌گردد. دکمه به حالت اولش
+           * برنمی‌گردد چون صفحه در حال ترک شدن است و پرش متن بد
+           * دیده می‌شود.
+           */
+          if(data.requires_auth&&data.url){
+          buttons.forEach(b=>{b.textContent=data.message||'برای دیدن شماره وارد شوید';});
+          window.location.href=data.url;
+          return;
+          }
+
           if(!response.ok||!data.success){
           buttons.forEach(b=>{b.disabled=false;b.textContent=data.message||'دوباره تلاش کنید';});
           loading=false;
@@ -642,6 +659,103 @@
           };
 
           buttons.forEach(b=>b.addEventListener('click',reveal));
+          });
+          </script>
+
+          {{--
+          دروازه‌ی دکمه‌ی اصلی.
+
+          تا وقتی فیلدهای لازمِ یک فرم پر نشده‌اند، دکمه‌ی اقدام کم‌رنگ
+          می‌ماند و وقتی همه‌چیز درست شد، پُررنگ می‌شود. کاربر پیش از
+          کلیک می‌فهمد هنوز چیزی مانده، به‌جای اینکه بزند و خطا بگیرد.
+
+          ⚠️ دکمه عمداً disabled نمی‌شود.
+
+          دکمه‌ی disabled کلیک را می‌خورد و هیچ نمی‌گوید - کاربر
+          می‌ماند که «چرا کار نمی‌کند؟». اینجا دکمه کلیک‌پذیر می‌ماند،
+          پس اعتبارسنجی خود مرورگر اجرا می‌شود، روی اولین فیلد ناقص
+          می‌پرد و می‌گوید چه چیزی کم است. کم‌رنگی خبر می‌دهد،
+          جلوگیری نمی‌کند.
+
+          فیلدهای پنهان (مرحله‌ی دیگر فرم، یا بخش مخصوص محصول در
+          فرمی که خدمت انتخاب شده) شمرده نمی‌شوند - وگرنه دکمه هرگز
+          پُررنگ نمی‌شد.
+          --}}
+          <script>
+          document.addEventListener('DOMContentLoaded',()=>{
+
+          const syncers=[];
+
+          document.querySelectorAll('form[data-gate]').forEach(form=>{
+
+          const buttons=[...form.querySelectorAll('[data-gate-submit]')];
+          if(!buttons.length) return;
+
+          const isLive=el=>!el.disabled&&!el.closest('[hidden]')&&el.offsetParent!==null;
+
+          /*
+           * فیلدی که باید با فیلد دیگری یکی باشد - عملاً «تکرار رمز
+           * عبور». رایج‌ترین خطای فرم ثبت‌نام همین است و تا وقتی فقط
+           * سرور آن را می‌گرفت، کاربر کل فرم را می‌فرستاد تا بفهمد.
+           * setCustomValidity باعث می‌شود هم دروازه آن را ببیند و هم
+           * خود مرورگر پیام بدهد.
+           */
+          form.querySelectorAll('[data-match]').forEach(field=>{
+          const other=form.querySelector(field.dataset.match);
+          if(!other) return;
+          const compare=()=>field.setCustomValidity(field.value===other.value?'':'با رمز عبور بالا یکی نیست.');
+          field.addEventListener('input',compare);
+          other.addEventListener('input',compare);
+          compare();
+          });
+
+          /*
+           * validity.valid خوانده می‌شود نه checkValidity().
+           *
+           * checkValidity() رویداد invalid را شلیک می‌کند، و بعضی
+           * فیلدهای سایت روی همان رویداد setCustomValidity دارند.
+           * یعنی یک بررسیِ صرفاً خواندنی، وضعیت فیلد را عوض می‌کرد.
+           * validity.valid همان جواب را بدون هیچ عارضه‌ای می‌دهد.
+           */
+          const ready=()=>[...form.querySelectorAll('[required]')]
+          .filter(isLive)
+          .every(f=>f.validity.valid);
+
+          const sync=()=>{
+          const ok=ready();
+          buttons.forEach(b=>{
+          b.classList.toggle('is-locked',!ok);
+          b.setAttribute('aria-disabled',ok?'false':'true');
+          });
+          };
+
+          form.addEventListener('input',sync);
+          form.addEventListener('change',sync);
+          form.addEventListener('gate:refresh',sync);
+
+          syncers.push(sync);
+          sync();
+          });
+
+          if(!syncers.length) return;
+
+          /*
+           * بعضی چیزها مجموعه‌ی «فیلدهای زنده» را عوض می‌کنند بدون
+           * اینکه هیچ فیلدی تغییر کند:
+           *
+           *   - دکمه‌ی «ادامه» در فرم چندمرحله‌ای، که مرحله‌ی بعد را
+           *     نمایان می‌کند
+           *   - تب‌های «ورود با ایمیل / با شماره»، که یک فرم را پنهان
+           *     و فرم دیگر را آشکار می‌کنند - و این تب‌ها بیرون از
+           *     خود فرم‌اند، پس شنونده‌ی روی فرم آنها را نمی‌بیند
+           *
+           * پس گوش دادن در سطح سند لازم است. setTimeout می‌گذارد
+           * اسکریپتِ آن بخش اول کارش را تمام کند.
+           */
+          document.addEventListener('click',()=>{
+          setTimeout(()=>syncers.forEach(s=>s()),0);
+          });
+
           });
           </script>
           </body>

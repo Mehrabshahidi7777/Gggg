@@ -13,7 +13,8 @@
 
         <form method="POST"
               action="{{ route('mobile.verify.store') }}"
-              class="mt-6 space-y-4">
+              class="mt-6 space-y-4"
+              data-gate>
 
             @csrf
 
@@ -24,11 +25,13 @@
                 data-digits-only
                 autocomplete="one-time-code"
                 maxlength="6"
+                minlength="6"
+                required
                 class="w-full rounded-lg border text-center text-2xl tracking-[.5em]"
                 placeholder="------"
             >
 
-            <button class="btn-primary w-full">
+            <button class="btn-primary w-full" data-gate-submit>
                 تأیید و ادامه
             </button>
         </form>

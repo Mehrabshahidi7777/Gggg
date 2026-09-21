@@ -25,7 +25,16 @@ class AuthController extends Controller {
             'password'=>['required','confirmed',Password::min(8)],
         ],['username.unique'=>'این نام کاربری قبلاً استفاده شده است.','username.alpha_dash'=>'نام کاربری فقط می‌تواند شامل حروف انگلیسی، عدد، خط تیره و زیرخط باشد.']);
         $user=User::create(['name'=>$data['username'],'username'=>$data['username'],'email'=>$data['email'],'password'=>$data['password']]);
-        Auth::login($user);$request->session()->regenerate();return redirect()->route('home')->with('success','حساب شما ساخته شد.');
+        Auth::login($user);$request->session()->regenerate();
+        /*
+        | intended، نه route('home').
+        |
+        | کسی که روی «نمایش شماره» یک آگهی زده و به اینجا فرستاده شده،
+        | باید به همان آگهی برگردد. ورود و تأیید پیامک از قبل intended
+        | را رعایت می‌کردند و فقط همین یک مسیر جا مانده بود، پس
+        | ثبت‌نام با ایمیل کاربر را به خانه می‌انداخت و آگهی گم می‌شد.
+        */
+        return redirect()->intended(route('home'))->with('success','حساب شما ساخته شد.');
     }
     public function requestMobileOtp(Request $request,AmootSmsService $sms){return $this->sendMobileOtp($request,$sms,'login');}
     public function requestMobileRegistrationOtp(Request $request,AmootSmsService $sms){

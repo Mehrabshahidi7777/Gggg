@@ -39,6 +39,29 @@ class AdContactController extends Controller
             ], 404);
         }
 
+        /*
+        | مهمان باید اول حساب بسازد.
+        |
+        | این فقط جلوی جمع‌آوری شماره‌ها را نمی‌گیرد؛ کاری می‌کند که
+        | «شماره‌هایی که دیده‌ام» در پنل کاربر معنی داشته باشد. تا وقتی
+        | نمایش‌ها بی‌نام بودند، تنها چیزی که می‌شد ذخیره کرد هشِ IP
+        | بود - که به هیچ حسابی وصل نیست و به درد کاربر نمی‌خورد.
+        |
+        | مقصد در سشن نگه داشته می‌شود تا بعد از ثبت‌نام، کاربر به همین
+        | آگهی برگردد، نه به صفحه‌ی خانه.
+        */
+        if (! auth()->check()) {
+
+            $request->session()->put('url.intended', route('ad.show', $ad->slug));
+
+            return response()->json([
+                'success' => false,
+                'requires_auth' => true,
+                'message' => 'برای دیدن شماره وارد شوید',
+                'url' => route('register'),
+            ], 401);
+        }
+
         $this->record($request, $ad);
 
         $phone = normalize_mobile($ad->phone) ?: $ad->phone;

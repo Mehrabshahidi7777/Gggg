@@ -18,6 +18,7 @@ use App\Http\Controllers\Front\AdRatingController;
 use App\Http\Controllers\Front\AdContactController;
 use App\Http\Controllers\Front\SitemapController;
 use App\Http\Controllers\Front\AdEditController;
+use App\Http\Controllers\Front\ActivityController;
 
 
 /*
@@ -264,7 +265,21 @@ Route::middleware('auth')->group(function () {
 
 
     /*
+    | Activity
+    |
+    | پنل کاربر. جای «پنل مشتری» را گرفت، که چون خرید آنلاین خاموش
+    | است همیشه سه صفر نشان می‌داد. توضیح کامل در ActivityController.
+    */
+
+    Route::get('/my-activity', [ActivityController::class, 'index'])
+        ->name('activity');
+
+
+    /*
     | Orders
+    |
+    | تاریخچه‌ی سفارش‌های آنلاینِ قبلی. از منو فقط به کسی نشان داده
+    | می‌شود که واقعاً سفارشی دارد.
     */
 
     Route::get('/my-orders', [OrderController::class, 'index'])
