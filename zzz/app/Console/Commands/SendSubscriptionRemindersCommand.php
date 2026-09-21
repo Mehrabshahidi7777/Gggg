@@ -131,11 +131,26 @@ class SendSubscriptionRemindersCommand extends Command
 
                 try {
 
-                    $sms->sendRenewalReminder($mobile, $message, [
-                        $name,
-                        $typeLabel,
-                        (string) $daysLeft,
-                    ]);
+                    /*
+                    | ⚠️ دو پترن جدا، چون دو متن جدا هستند.
+                    |
+                    | پترن یادآوری می‌گوید «تا N روز دیگر تمام می‌شود».
+                    | اگر مرحله‌ی «تمام شد» هم از همان استفاده کند،
+                    | کاربر پیامکِ «تا ۰ روز دیگر» می‌گیرد - یعنی
+                    | نمی‌فهمد آگهی‌هایش همین حالا تعلیق شده‌اند.
+                    */
+                    if ($daysLeft > 0) {
+                        $sms->sendRenewalReminder($mobile, $message, [
+                            $name,
+                            $typeLabel,
+                            (string) $daysLeft,
+                        ]);
+                    } else {
+                        $sms->sendExpiryNotice($mobile, $message, [
+                            $name,
+                            $typeLabel,
+                        ]);
+                    }
 
                     $subscription->forceFill([$column => now()])->save();
                     $count++;

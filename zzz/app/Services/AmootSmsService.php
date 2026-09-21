@@ -34,22 +34,83 @@ class AmootSmsService
     |
     | چون نمی‌دانیم پنل شما کدام حالت را دارد، هر دو پشتیبانی می‌شود:
     |
-    |   اگر AMOOT_PATTERN_RENEWAL_ID در .env ست شده باشد → با پترن
-    |   در غیر این صورت                                   → متن ساده
+    |   اگر شناسه‌ی پترن در .env ست شده باشد → با پترن
+    |   در غیر این صورت                      → متن ساده
     |
-    | مقدارهای پترن با «;» جدا می‌شوند؛ همان قالبی که آموت می‌پذیرد.
+    | سه متغیر: نام کاربر، نوع اشتراک، تعداد روز باقی‌مانده.
     |
     */
     public function sendRenewalReminder(string $mobile, string $message, array $patternValues = []): void
     {
-        $pattern = (int) config('services.amoot.pattern_renewal_id');
+        $this->sendReminder(
+            $mobile,
+            $message,
+            $patternValues,
+            (int) config('services.amoot.pattern_renewal_id')
+        );
+    }
 
+    /*
+    |--------------------------------------------------------------------------
+    | پیامک «اشتراک تمام شد»
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ پترنِ جدا، و این اجباری است.
+    |
+    | متن یادآوری می‌گوید «تا N روز دیگر تمام می‌شود». اگر همان پترن
+    | برای این مرحله هم استفاده شود، پیام می‌شود «تا ۰ روز دیگر تمام
+    | می‌شود» - که هم غلط است و هم دقیقاً برعکسِ کاری که باید بکند:
+    | کاربر باید بفهمد آگهی‌هایش همین حالا تعلیق شده‌اند.
+    |
+    | دو متغیر: نام کاربر، نوع اشتراک.
+    |
+    */
+    public function sendExpiryNotice(string $mobile, string $message, array $patternValues = []): void
+    {
+        $this->sendReminder(
+            $mobile,
+            $message,
+            $patternValues,
+            (int) config('services.amoot.pattern_expired_id')
+        );
+    }
+
+    private function sendReminder(string $mobile, string $message, array $values, int $pattern): void
+    {
         if ($pattern) {
-            $this->sendWithPattern($mobile, $pattern, implode(';', $patternValues));
+            $this->sendWithPattern($mobile, $pattern, $this->joinValues($values));
             return;
         }
 
         $this->sendText($mobile, $message);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | چسباندن مقدارهای پترن
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ جداکننده «,» است نه «;». هر دو نمونه‌ی رسمی خود آموت
+    | (github.com/AmootSoft/AmootSMS) با کاما می‌چسبانند:
+    |
+    |     string.Join(",", PatternValues)        // C#
+    |     "PatternValues=p1,p2"                  // PHP
+    |
+    | با جداکننده‌ی غلط، هر سه مقدار داخل متغیر اول می‌نشینند و بقیه
+    | خالی می‌مانند. کد یک‌بارمصرف چون یک مقدار بیشتر ندارد این را لو
+    | نمی‌داد؛ اولین پیامک یادآوری لو می‌داد.
+    |
+    | و چون کاما جداکننده است، خودِ مقدارها نباید کاما داشته باشند -
+    | وگرنه یک نامِ «رضایی, محمد» پیام را به هم می‌ریزد. کامای لاتین
+    | به کامای فارسی تبدیل می‌شود که در متن پیامک هم درست‌تر است.
+    |
+    */
+    private function joinValues(array $values): string
+    {
+        return implode(',', array_map(
+            fn ($value) => str_replace([',', ';'], '،', (string) $value),
+            $values
+        ));
     }
 
     /*

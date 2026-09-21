@@ -78,11 +78,51 @@ class SubscriptionReminderTest extends TestCase
         $subscription = $this->subscription($this->user(), now()->subHour(), 'expired');
 
         $sms = $this->fakeSms();
-        $sms->shouldReceive('sendRenewalReminder')->once();
+        $sms->shouldReceive('sendExpiryNotice')->once();
 
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
 
         $this->assertNotNull($subscription->fresh()->reminder_expired_sent_at);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | پترنِ درست برای هر مرحله
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ متنِ یادآوری «تا N روز دیگر تمام می‌شود» است. اگر مرحله‌ی
+    | «تمام شد» هم همان پترن را بگیرد، کاربر پیامکِ «تا ۰ روز دیگر»
+    | می‌گیرد - یعنی دقیقاً نمی‌فهمد آگهی‌هایش همین حالا تعلیق شده‌اند،
+    | که تنها دلیل فرستادن این پیامک بود.
+    */
+    public function test_the_expiry_stage_does_not_borrow_the_renewal_pattern(): void
+    {
+        $this->subscription($this->user(), now()->subHour(), 'expired');
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->never();
+        $sms->shouldReceive('sendExpiryNotice')->once()->with(
+            '09121234567',
+            Mockery::any(),
+            /* دو مقدار، نه سه: «تعداد روز» اینجا معنایی ندارد. */
+            Mockery::on(fn ($values) => count($values) === 2)
+        );
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    public function test_the_renewal_stage_passes_the_days_left(): void
+    {
+        $this->subscription($this->user(), now()->addDays(5));
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->once()->with(
+            '09121234567',
+            Mockery::any(),
+            Mockery::on(fn ($v) => count($v) === 3 && $v[2] === '7' && $v[1] === 'خدمات')
+        );
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
     }
 
     /*
