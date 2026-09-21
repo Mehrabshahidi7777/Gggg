@@ -1266,3 +1266,54 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 
 /* چاپ: دکمه‌ی شناور روی کاغذ معنی ندارد. */
 @media print { .chat-bubble { display: none; } }
+
+/* ==========================================================================
+   آمار پنل ارائه‌دهنده
+   ==========================================================================
+
+   ارائه‌دهنده ماهی ۱۵۰ هزار تومان می‌دهد و تا امروز فقط یک عددِ خالی
+   می‌دید: «تماس‌های این ماه: ۴۷». آن عدد نمی‌گفت اوضاع بهتر شده یا
+   بدتر، و نمی‌گفت کدام آگهی آورده - و هر دو سؤال، همان چیزی است که
+   تصمیم تمدید را می‌سازد.
+   ========================================================================== */
+
+/* جهتِ تغییر نسبت به ماه قبل. رنگ تنها حامل معنی نیست: فلش ↑ و ↓ هم
+   هست، پس کسی که رنگ را تشخیص نمی‌دهد باز هم می‌فهمد. */
+.panel-delta {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--color-steel-light);
+}
+.panel-delta.is-up { color: var(--color-green); }
+.panel-delta.is-down { color: var(--color-red); }
+
+.panel-substat {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--color-steel-light);
+  line-height: 1.8;
+}
+
+.panel-badge {
+  display: inline-block;
+  margin-inline-start: 8px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-green-bg);
+  color: var(--color-green);
+  font-size: 0.7rem;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+/* آمار هر آگهی. روی موبایل زیر هم می‌افتند، پس gap عمودی هم دارد. */
+.panel-adstats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--color-steel);
+}
+.panel-adstats b { color: var(--color-ink); font-weight: 800; }

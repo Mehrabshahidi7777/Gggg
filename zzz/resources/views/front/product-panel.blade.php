@@ -39,8 +39,34 @@
         <div class="corner-card stat-card">
             <div class="label">تماس‌های این ماه</div>
             <div class="value">{{ number_format($leadsThisMonth) }}</div>
-            <div style="font-size:.72rem;color:var(--color-steel-light);margin-top:4px;">
+
+            {{--
+                عددِ تنها نمی‌گوید اوضاع بهتر شده یا بدتر - و همین
+                سؤال است که تصمیم تمدید را می‌سازد.
+
+                ماه اول هیچ «ماه قبلی» ندارد، پس به‌جای «۱۰۰٪ رشد»
+                که بی‌معنی است، فقط سکوت می‌شود.
+            --}}
+            @php $delta = $leadsThisMonth - $leadsLastMonth; @endphp
+
+            @if($leadsLastMonth > 0 || $leadsThisMonth > 0)
+                <div class="panel-delta {{ $delta > 0 ? 'is-up' : ($delta < 0 ? 'is-down' : '') }}">
+                    @if($delta > 0)
+                        ↑ {{ number_format($delta) }} بیشتر از ماه قبل
+                    @elseif($delta < 0)
+                        ↓ {{ number_format(abs($delta)) }} کمتر از ماه قبل
+                    @else
+                        بدون تغییر نسبت به ماه قبل
+                    @endif
+                </div>
+            @endif
+
+            <div class="panel-substat">
                 مجموع از ابتدا: {{ number_format($leadsTotal) }}
+                @if($viewsTotal > 0)
+                    · از {{ number_format($viewsTotal) }} بازدید
+                    ({{ round($leadsTotal / $viewsTotal * 100) }}٪)
+                @endif
             </div>
         </div>
 
@@ -164,8 +190,36 @@
                         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
 
                             <div>
-                                <div style="font-weight:800;">{{ $product->title }}</div>
+                                <div style="font-weight:800;">
+                                    {{ $product->title }}
+
+                                    {{--
+                                        پرتماس‌ترینِ این ماه. ارائه‌دهنده‌ای
+                                        که می‌داند کدام آگهی‌اش کار می‌کند،
+                                        می‌تواند بقیه را شبیه همان بنویسد.
+                                    --}}
+                                    @if($bestPerformerId === $product->id)
+                                        <span class="panel-badge">بهترین عملکرد</span>
+                                    @endif
+                                </div>
                                 <div style="font-size:0.85rem;color:var(--color-steel-light);margin-top:6px;">{{ $product->status_text }}</div>
+
+                                {{--
+                                    آمارِ همین آگهی.
+
+                                    عددِ کلیِ بالای صفحه می‌گوید اشتراک
+                                    ارزش داشته یا نه؛ این یکی می‌گوید
+                                    *کدام* آگهی ارزشش را ساخته.
+                                --}}
+                                <div class="panel-adstats">
+                                    <span><b>{{ number_format($product->leads_this_month) }}</b> تماس این ماه</span>
+                                    <span><b>{{ number_format($product->views_count) }}</b> بازدید</span>
+                                    @if($product->views_count > 0)
+                                        <span>نرخ تبدیل
+                                            <b>{{ round($product->leads_total / $product->views_count * 100) }}٪</b>
+                                        </span>
+                                    @endif
+                                </div>
 
                                 {{--
                                     ویرایش همیشه در دسترس است، ولی اگر

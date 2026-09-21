@@ -559,6 +559,18 @@ class ServiceSubscriptionController extends Controller
                 'contactReveals as leads_this_month' => fn ($q) => $q->where(
                     'created_at', '>=', now()->startOfMonth()
                 ),
+
+                /*
+                | ماه گذشته، برای مقایسه.
+                |
+                | عددِ تنها به ارائه‌دهنده نمی‌گوید اوضاع بهتر شده یا
+                | بدتر - و همین سؤال است که تصمیم تمدید را می‌سازد.
+                | پس بازه‌ی *کاملِ* ماه قبل شمرده می‌شود، نه «۳۰ روز
+                | گذشته»، تا با «این ماه» هم‌جنس باشد.
+                */
+                'contactReveals as leads_last_month' => fn ($q) => $q
+                    ->where('created_at', '>=', now()->subMonthNoOverflow()->startOfMonth())
+                    ->where('created_at', '<', now()->startOfMonth()),
             ])
             ->latest()
             ->get();
@@ -566,7 +578,27 @@ class ServiceSubscriptionController extends Controller
         $serviceCount = $services->count();
 
         $leadsThisMonth = $services->sum('leads_this_month');
+        $leadsLastMonth = $services->sum('leads_last_month');
         $leadsTotal = $services->sum('leads_total');
+
+        /*
+        | بازدید و نرخ تبدیل.
+        |
+        | «بازدید» یعنی کسی صفحه‌ی آگهی را باز کرده؛ «تماس» یعنی روی
+        | نمایش شماره زده. نسبتشان می‌گوید آگهی چقدر خوب نوشته شده:
+        | بازدید زیاد با تماس کم یعنی عنوان و عکس جذب می‌کند ولی
+        | محتوا قانع نمی‌کند.
+        */
+        $viewsTotal = $services->sum('views_count');
+
+        /*
+        | پرتماس‌ترین آگهیِ این ماه، تا ارائه‌دهنده بداند کدام یکی
+        | واقعاً کار می‌کند. مساوی‌ها اهمیتی ندارند؛ یکی کافی است.
+        | وقتی هیچ تماسی نبوده، هیچ‌کدام «بهترین» نیست.
+        */
+        $bestPerformerId = $services->where('leads_this_month', '>', 0)
+            ->sortByDesc('leads_this_month')
+            ->first()?->id;
 
         return view(
             'front.service-panel',
@@ -575,7 +607,10 @@ class ServiceSubscriptionController extends Controller
                 'services',
                 'serviceCount',
                 'leadsThisMonth',
+                'leadsLastMonth',
                 'leadsTotal',
+                'viewsTotal',
+                'bestPerformerId',
                 'isCurrentlyActive',
                 'chainStart',
                 'chainEnd'
