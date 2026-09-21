@@ -37,48 +37,26 @@ class AmootSmsService
     |   اگر شناسه‌ی پترن در .env ست شده باشد → با پترن
     |   در غیر این صورت                      → متن ساده
     |
-    | سه متغیر: نام کاربر، نوع اشتراک، تعداد روز باقی‌مانده.
+    | سه متغیر: نام کاربر، نوع اشتراک، و وضعیت.
+    |
+    | ⚠️ متغیر سوم عمداً یک *عبارت* است، نه تعداد روز.
+    |
+    | اگر عدد بود، هر سه مرحله نمی‌توانستند از یک پترن استفاده کنند:
+    | مرحله‌ی «تمام شد» پیامکِ «تا ۰ روز دیگر تمام می‌شود» می‌داد - هم
+    | غلط، هم برعکسِ کاری که باید بکند. با عبارت، یک پترن هر سه مرحله
+    | را درست می‌گوید و کاربر فقط یک شناسه در پنل می‌سازد:
+    |
+    |   «تا 7 روز دیگر تمام می‌شود»
+    |   «فردا تمام می‌شود»
+    |   «تمام شد و آگهی‌هایتان تعلیق شدند»
     |
     */
     public function sendRenewalReminder(string $mobile, string $message, array $patternValues = []): void
     {
-        $this->sendReminder(
-            $mobile,
-            $message,
-            $patternValues,
-            (int) config('services.amoot.pattern_renewal_id')
-        );
-    }
+        $pattern = (int) config('services.amoot.pattern_renewal_id');
 
-    /*
-    |--------------------------------------------------------------------------
-    | پیامک «اشتراک تمام شد»
-    |--------------------------------------------------------------------------
-    |
-    | ⚠️ پترنِ جدا، و این اجباری است.
-    |
-    | متن یادآوری می‌گوید «تا N روز دیگر تمام می‌شود». اگر همان پترن
-    | برای این مرحله هم استفاده شود، پیام می‌شود «تا ۰ روز دیگر تمام
-    | می‌شود» - که هم غلط است و هم دقیقاً برعکسِ کاری که باید بکند:
-    | کاربر باید بفهمد آگهی‌هایش همین حالا تعلیق شده‌اند.
-    |
-    | دو متغیر: نام کاربر، نوع اشتراک.
-    |
-    */
-    public function sendExpiryNotice(string $mobile, string $message, array $patternValues = []): void
-    {
-        $this->sendReminder(
-            $mobile,
-            $message,
-            $patternValues,
-            (int) config('services.amoot.pattern_expired_id')
-        );
-    }
-
-    private function sendReminder(string $mobile, string $message, array $values, int $pattern): void
-    {
         if ($pattern) {
-            $this->sendWithPattern($mobile, $pattern, $this->joinValues($values));
+            $this->sendWithPattern($mobile, $pattern, $this->joinValues($patternValues));
             return;
         }
 

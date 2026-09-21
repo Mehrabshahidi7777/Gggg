@@ -78,7 +78,7 @@ class SubscriptionReminderTest extends TestCase
         $subscription = $this->subscription($this->user(), now()->subHour(), 'expired');
 
         $sms = $this->fakeSms();
-        $sms->shouldReceive('sendExpiryNotice')->once();
+        $sms->shouldReceive('sendRenewalReminder')->once();
 
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
 
@@ -87,31 +87,31 @@ class SubscriptionReminderTest extends TestCase
 
     /*
     |--------------------------------------------------------------------------
-    | پترنِ درست برای هر مرحله
+    | یک پترن، سه مرحله
     |--------------------------------------------------------------------------
     |
-    | ⚠️ متنِ یادآوری «تا N روز دیگر تمام می‌شود» است. اگر مرحله‌ی
-    | «تمام شد» هم همان پترن را بگیرد، کاربر پیامکِ «تا ۰ روز دیگر»
-    | می‌گیرد - یعنی دقیقاً نمی‌فهمد آگهی‌هایش همین حالا تعلیق شده‌اند،
-    | که تنها دلیل فرستادن این پیامک بود.
+    | ⚠️ متغیر سوم یک عبارت است، نه عدد - و همین است که یک پترن را
+    | برای هر سه مرحله کافی می‌کند.
+    |
+    | اگر عدد روز می‌رفت، مرحله‌ی آخر پیامکِ «تا ۰ روز دیگر تمام
+    | می‌شود» می‌داد: هم غلط، هم دقیقاً برعکسِ کاری که باید بکند.
+    | کاربر باید بفهمد آگهی‌هایش همین حالا تعلیق شده‌اند.
     */
-    public function test_the_expiry_stage_does_not_borrow_the_renewal_pattern(): void
+    public function test_the_expired_stage_does_not_say_zero_days(): void
     {
         $this->subscription($this->user(), now()->subHour(), 'expired');
 
         $sms = $this->fakeSms();
-        $sms->shouldReceive('sendRenewalReminder')->never();
-        $sms->shouldReceive('sendExpiryNotice')->once()->with(
+        $sms->shouldReceive('sendRenewalReminder')->once()->with(
             '09121234567',
             Mockery::any(),
-            /* دو مقدار، نه سه: «تعداد روز» اینجا معنایی ندارد. */
-            Mockery::on(fn ($values) => count($values) === 2)
+            Mockery::on(fn ($v) => $v[2] === 'تمام شد و آگهی‌هایتان تعلیق شدند')
         );
 
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
     }
 
-    public function test_the_renewal_stage_passes_the_days_left(): void
+    public function test_the_seven_day_stage_names_the_days(): void
     {
         $this->subscription($this->user(), now()->addDays(5));
 
@@ -119,7 +119,24 @@ class SubscriptionReminderTest extends TestCase
         $sms->shouldReceive('sendRenewalReminder')->once()->with(
             '09121234567',
             Mockery::any(),
-            Mockery::on(fn ($v) => count($v) === 3 && $v[2] === '7' && $v[1] === 'خدمات')
+            Mockery::on(fn ($v) => count($v) === 3
+                && $v[1] === 'خدمات'
+                && $v[2] === 'تا 7 روز دیگر تمام می‌شود')
+        );
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    /* «تا ۱ روز دیگر» فارسی نیست؛ «فردا» است. */
+    public function test_the_last_day_says_tomorrow(): void
+    {
+        $this->subscription($this->user(), now()->addHours(12));
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->once()->with(
+            '09121234567',
+            Mockery::any(),
+            Mockery::on(fn ($v) => $v[2] === 'فردا تمام می‌شود')
         );
 
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();

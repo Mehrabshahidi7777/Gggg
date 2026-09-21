@@ -110,12 +110,32 @@ class SendSubscriptionRemindersCommand extends Command
                 $typeLabel = $subscription->type === 'product' ? 'محصولات' : 'خدمات';
                 $name = $subscription->user->username ?: $subscription->user->name;
 
+                /*
+                | وضعیت، به شکل یک عبارت کامل.
+                |
+                | ⚠️ این همان چیزی است که یک پترن را برای هر سه مرحله
+                | کافی می‌کند. اگر به‌جایش عدد روز می‌رفت، مرحله‌ی
+                | آخر پیامکِ «تا ۰ روز دیگر» می‌داد و ناچار بودیم
+                | پترن دومی بسازیم.
+                |
+                | «فردا» هم از «تا ۱ روز دیگر» فارسی‌تر است.
+                */
+                $state = match (true) {
+                    $daysLeft === 0 => 'تمام شد و آگهی‌هایتان تعلیق شدند',
+                    $daysLeft === 1 => 'فردا تمام می‌شود',
+                    default => sprintf('تا %d روز دیگر تمام می‌شود', $daysLeft),
+                };
+
+                /*
+                | متن پشتیبان، برای وقتی که پترنی ساخته نشده باشد.
+                | اینجا جا هست، پس مهلت شش‌ماهه هم گفته می‌شود.
+                */
                 $message = $daysLeft > 0
                     ? sprintf(
-                        'سازمت | %s عزیز، اشتراک %s شما تا %s روز دیگر به پایان می‌رسد. برای جلوگیری از تعلیق آگهی‌ها آن را تمدید کنید. sazmat.com',
+                        'سازمت | %s عزیز، اشتراک %s شما %s. برای جلوگیری از تعلیق آگهی‌ها آن را تمدید کنید. sazmat.com',
                         $name,
                         $typeLabel,
-                        $daysLeft
+                        $state
                     )
                     : sprintf(
                         'سازمت | %s عزیز، اشتراک %s شما به پایان رسید و آگهی‌هایتان تعلیق شد. تا شش ماه فرصت دارید با تمدید، آنها را بازگردانید. sazmat.com',
@@ -132,25 +152,14 @@ class SendSubscriptionRemindersCommand extends Command
                 try {
 
                     /*
-                    | ⚠️ دو پترن جدا، چون دو متن جدا هستند.
-                    |
-                    | پترن یادآوری می‌گوید «تا N روز دیگر تمام می‌شود».
-                    | اگر مرحله‌ی «تمام شد» هم از همان استفاده کند،
-                    | کاربر پیامکِ «تا ۰ روز دیگر» می‌گیرد - یعنی
-                    | نمی‌فهمد آگهی‌هایش همین حالا تعلیق شده‌اند.
+                    | یک پترن برای هر سه مرحله. تفاوتِ مرحله‌ها در
+                    | متغیر سوم ($state) است، نه در پترن.
                     */
-                    if ($daysLeft > 0) {
-                        $sms->sendRenewalReminder($mobile, $message, [
-                            $name,
-                            $typeLabel,
-                            (string) $daysLeft,
-                        ]);
-                    } else {
-                        $sms->sendExpiryNotice($mobile, $message, [
-                            $name,
-                            $typeLabel,
-                        ]);
-                    }
+                    $sms->sendRenewalReminder($mobile, $message, [
+                        $name,
+                        $typeLabel,
+                        $state,
+                    ]);
 
                     $subscription->forceFill([$column => now()])->save();
                     $count++;

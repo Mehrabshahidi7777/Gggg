@@ -99,46 +99,27 @@ class AmootPatternValuesTest extends TestCase
     }
 
     /*
-    | دو پترن جدا. اگر «تمام شد» از شناسه‌ی یادآوری استفاده کند،
-    | کاربر پیامکِ «تا ۰ روز دیگر» می‌گیرد.
+    | یک پترن برای هر سه مرحله. آنچه عوض می‌شود متغیر سوم است:
+    | یک عبارت، نه عدد روز.
     */
-    public function test_the_expiry_notice_uses_its_own_pattern(): void
+    public function test_one_pattern_carries_every_stage(): void
     {
         Http::fake([
             'portal.amootsms.com/*' => Http::response(['Status' => 'Success'], 200),
         ]);
 
-        config([
-            'services.amoot.pattern_renewal_id' => 55,
-            'services.amoot.pattern_expired_id' => 66,
-        ]);
+        config(['services.amoot.pattern_renewal_id' => 55]);
 
-        app(AmootSmsService::class)
-            ->sendExpiryNotice('09121234567', 'متن', ['مهراب', 'خدمات']);
+        $service = app(AmootSmsService::class);
 
-        Http::assertSent(fn ($request) => $request['PatternCodeID'] === 66
-            && $request['PatternValues'] === 'مهراب,خدمات');
-    }
+        foreach (['تا 7 روز دیگر تمام می‌شود', 'فردا تمام می‌شود', 'تمام شد و آگهی‌هایتان تعلیق شدند'] as $state) {
+            $service->sendRenewalReminder('09121234567', 'متن', ['مهراب', 'خدمات', $state]);
+        }
 
-    /*
-    | و اگر پترنِ «تمام شد» ساخته نشده باشد، نباید سراغ پترن یادآوری
-    | برود؛ متن ساده می‌رود که دست‌کم درست است.
-    */
-    public function test_a_missing_expiry_pattern_falls_back_to_plain_text(): void
-    {
-        Http::fake([
-            'portal.amootsms.com/*' => Http::response(['Status' => 'Success'], 200),
-        ]);
+        Http::assertSentCount(3);
 
-        config([
-            'services.amoot.pattern_renewal_id' => 55,
-            'services.amoot.pattern_expired_id' => null,
-        ]);
-
-        app(AmootSmsService::class)
-            ->sendExpiryNotice('09121234567', 'اشتراک شما تمام شد.', ['مهراب', 'خدمات']);
-
-        Http::assertSent(fn ($request) => str_contains($request->url(), 'SendSimple'));
+        Http::assertSent(fn ($request) => $request['PatternCodeID'] === 55
+            && $request['PatternValues'] === 'مهراب,خدمات,تمام شد و آگهی‌هایتان تعلیق شدند');
     }
 
     /*
