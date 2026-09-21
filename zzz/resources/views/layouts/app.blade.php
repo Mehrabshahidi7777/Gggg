@@ -349,6 +349,17 @@
           const form = input.form;
           const isEditForm = input.dataset.imagesRemaining !== undefined;
 
+          /*
+           * برچسبِ کادر بزرگ آپلود («۱۱ عکس انتخاب شد»).
+           *
+           * این برچسب اسکریپت خودش را دارد و مستقل از پیام زیرش
+           * نوشته می‌شود. نتیجه‌اش این بود که بعد از خطا، کادرِ بزرگ
+           * و پررنگ خبر خوش می‌داد و خطا در یک خط کوچک زیرش
+           * می‌نشست - چشم اولی را می‌دید و دومی را نه.
+           */
+          const label = document.querySelector(input.dataset.imagesLabel || '');
+          const labelBox = label ? label.closest('.file-upload-box') || label : null;
+
           const picked = function () {
           return input.files ? input.files.length : 0;
           };
@@ -382,6 +393,7 @@
 
           /* موقع انتخاب فقط شمارش - بدون ایراد، بدون قرمز. */
           const showCount = function () {
+          if (labelBox) { labelBox.classList.remove('is-error'); }
           if (! note) { return; }
           note.classList.remove('is-error');
           note.textContent = picked() === 0 ? '' : picked() + ' تصویر انتخاب شد.';
@@ -419,7 +431,26 @@
 
           const overLimit = function () { return picked() > capacity(); };
 
+          /*
+           * خطا باید در هر دو جا دیده شود.
+           *
+           * انتخاب کاربر عمداً پاک نمی‌شود - همان کاری که این باگ را
+           * ساخته بود - پس «عکسی انتخاب نشده» دروغ می‌بود: فایل‌ها
+           * هنوز در فرم‌اند و اگر پاکشان کنیم، کاربری که دوباره
+           * انتخاب نکند آگهی‌اش بی‌تصویر ثبت می‌شود.
+           *
+           * به جایش خودِ کادر می‌گوید چه خبر است، تا پیامِ پررنگ و
+           * پیامِ کوچک یک چیز بگویند.
+           */
           const complain = function () {
+
+          if (labelBox) { labelBox.classList.add('is-error'); }
+
+          if (label) {
+          label.textContent = picked() + ' عکس انتخاب شد — بیشتر از حد مجاز. '
+          + 'دوباره روی همین کادر بزنید و کمتر انتخاب کنید.';
+          }
+
           if (! note) { return; }
           note.textContent = tooManyMessage();
           note.classList.add('is-error');

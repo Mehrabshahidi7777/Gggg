@@ -773,6 +773,14 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 .file-upload-box{display:flex;align-items:center;justify-content:center;gap:10px;padding:22px;border:1.5px dashed var(--color-line-strong,#C7D0DB);border-radius:var(--radius-sm);cursor:pointer;color:var(--color-steel);font-weight:600;font-size:.9rem;transition:.2s;text-align:center}
 .file-upload-box:hover{border-color:var(--color-blueprint);color:var(--color-blueprint)}
 .file-upload-box svg{width:20px;height:20px;flex-shrink:0}
+
+/* کادر آپلود، وقتی بیش از سقف انتخاب شده.
+
+   بدون این، کادرِ بزرگ «۱۱ عکس انتخاب شد» را با ظاهر عادی نشان
+   می‌داد و خطا فقط در یک خط کوچک زیرش می‌نشست - چشم اولی را
+   می‌دید و دومی را نه. */
+.file-upload-box.is-error{border-color:var(--color-red);color:var(--color-red);border-style:solid}
+.file-upload-box.is-error:hover{border-color:var(--color-red);color:var(--color-red)}
 .cart-link { display:flex; align-items:center; gap:6px; padding:9px 14px; border-radius:999px; border:1.5px solid var(--color-line-strong,#C7D0DB); color:var(--color-ink,#0E2A47); font-weight:700; font-size:.85rem; white-space:nowrap; }
 .cart-link:hover { border-color:var(--color-blueprint); color:var(--color-blueprint); }
 .cart-link svg { width:18px; height:18px; flex-shrink:0; }

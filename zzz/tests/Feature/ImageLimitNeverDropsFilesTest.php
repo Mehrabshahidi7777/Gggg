@@ -139,6 +139,29 @@ class ImageLimitNeverDropsFilesTest extends TestCase
         $this->assertStringContainsString('id="images-note"', $html);
     }
 
+    /*
+    | کادر بزرگ آپلود اسکریپت خودش را دارد و «۱۱ عکس انتخاب شد» را
+    | با ظاهر عادی می‌نوشت، در حالی که خطا فقط در یک خط کوچک زیرش
+    | می‌نشست. چشم اولی را می‌دید و دومی را نه.
+    |
+    | data-images-label همان کادر را به اسکریپت سقف وصل می‌کند تا هر
+    | دو یک چیز بگویند.
+    */
+    public function test_the_upload_box_is_wired_to_the_limit_script(): void
+    {
+        $html = $this->actingAs($this->user)->get(route('ad.create'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-images-label="#imagesLabelText"', $html);
+        $this->assertStringContainsString('id="imagesLabelText"', $html);
+    }
+
+    public function test_the_upload_box_has_an_error_state_to_show(): void
+    {
+        $css = file_get_contents(base_path('../public_html/css/sazmat-theme.css'));
+
+        $this->assertStringContainsString('.file-upload-box.is-error', $css);
+    }
+
     public function test_the_edit_form_reports_its_remaining_room(): void
     {
         $ad = $this->approvedAd();
