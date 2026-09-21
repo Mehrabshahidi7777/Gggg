@@ -105,13 +105,18 @@ class SubscriptionReminderTest extends TestCase
         $sms->shouldReceive('sendRenewalReminder')->once()->with(
             '09121234567',
             Mockery::any(),
-            Mockery::on(fn ($v) => $v[2] === 'تمام شد و آگهی‌هایتان تعلیق شدند')
+            Mockery::on(fn ($v) => $v[1] === 'تمام شد؛ آگهی‌ها تعلیق شدند')
         );
 
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
     }
 
-    public function test_the_seven_day_stage_names_the_days(): void
+    /*
+    | ⚠️ اشتراک ۵ روز دیگر تمام می‌شود، پس پیامک باید «۵» بگوید نه
+    | «۷». عددِ ۷ سقفِ بازه‌ی مرحله است، نه چیزی که برای این کاربر
+    | درست باشد - و پیامکی که عدد غلط بدهد بدتر از نفرستادن است.
+    */
+    public function test_the_reminder_counts_the_real_days_not_the_stage(): void
     {
         $this->subscription($this->user(), now()->addDays(5));
 
@@ -119,10 +124,27 @@ class SubscriptionReminderTest extends TestCase
         $sms->shouldReceive('sendRenewalReminder')->once()->with(
             '09121234567',
             Mockery::any(),
-            Mockery::on(fn ($v) => count($v) === 3
-                && $v[1] === 'خدمات'
-                && $v[2] === 'تا 7 روز دیگر تمام می‌شود')
+            Mockery::on(fn ($v) => count($v) === 2
+                && $v[0] === 'خدمات'
+                && $v[1] === 'تا 5 روز دیگر تمام می‌شود')
         );
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    /*
+    | و همان اشتراک نباید در یک اجرا دو پیامک بگیرد.
+    |
+    | تا پیش از این، اشتراکی که ۱۲ ساعت دیگر تمام می‌شد هم در بازه‌ی
+    | ۷ روز می‌افتاد و هم در بازه‌ی ۱ روز: دو پیامک پشت سر هم، با دو
+    | متن متفاوت، و دو برابر هزینه.
+    */
+    public function test_one_subscription_never_gets_two_messages_in_one_run(): void
+    {
+        $this->subscription($this->user(), now()->addHours(12));
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->once();
 
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
     }
@@ -136,7 +158,7 @@ class SubscriptionReminderTest extends TestCase
         $sms->shouldReceive('sendRenewalReminder')->once()->with(
             '09121234567',
             Mockery::any(),
-            Mockery::on(fn ($v) => $v[2] === 'فردا تمام می‌شود')
+            Mockery::on(fn ($v) => $v[1] === 'فردا تمام می‌شود')
         );
 
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
@@ -216,6 +238,57 @@ class SubscriptionReminderTest extends TestCase
             ->assertSuccessful();
 
         $this->assertNull($subscription->fresh()->reminder_7d_sent_at);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | بودجه‌ی یک صفحه
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ پیامک فارسی با UCS-2 فرستاده می‌شود: تا ۷۰ کاراکتر یک صفحه،
+    | از ۷۱ به بعد دو صفحه - یعنی دو برابر هزینه، روی *هر* یادآوری،
+    | برای همیشه.
+    |
+    | اضافه‌کردن یک کلمه به متن، کاری است که هیچ‌کس هنگام انجامش
+    | متوجه هزینه‌اش نمی‌شود. این تست همان لحظه جلویش را می‌گیرد.
+    |
+    | ۷۰ منهای متنِ ثابتِ پترن («اشتراک » + « شما » + «.» + خط دوم)
+    | می‌شود سقفِ مقدارها.
+    */
+    public function test_the_message_still_fits_one_sms_page(): void
+    {
+        /* متن ثابتِ پترن، بدون جای متغیرها. */
+        $fixed = mb_strlen("اشتراک  شما .
+تمدید: sazmat.com");
+
+        $sent = [];
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')
+            ->andReturnUsing(function ($mobile, $message, $values) use (&$sent) {
+                $sent[] = $values;
+            });
+
+        /* هر سه مرحله در یک اجرا. */
+        $this->subscription($this->user('09120000001'), now()->addDays(5));
+        $this->subscription($this->user('09120000002'), now()->addHours(12));
+        $this->subscription($this->user('09120000003'), now()->subHour(), 'expired');
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+
+        $this->assertCount(3, $sent, 'هر سه مرحله باید پیامک بدهند.');
+
+        foreach ($sent as $values) {
+
+            $length = $fixed + array_sum(array_map('mb_strlen', $values));
+
+            $this->assertLessThanOrEqual(
+                70,
+                $length,
+                'پیامک از یک صفحه بیرون زد (' . $length . ' کاراکتر): «'
+                . implode('» و «', $values) . '». هزینه دو برابر می‌شود.'
+            );
+        }
     }
 
     protected function tearDown(): void

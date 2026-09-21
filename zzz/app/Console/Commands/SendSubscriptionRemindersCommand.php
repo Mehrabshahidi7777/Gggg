@@ -71,12 +71,20 @@ class SendSubscriptionRemindersCommand extends Command
         if ($daysLeft > 0) {
             /*
             | اشتراکی که هنوز تمام نشده ولی تا حداکثر $daysLeft روز
-            | دیگر تمام می‌شود. چون کرون روزانه است، «<=» کافی است و
-            | نیازی به بازه‌ی دقیق نیست؛ ستون _sent_at جلوی تکرار را
-            | می‌گیرد.
+            | دیگر تمام می‌شود.
+            |
+            | ⚠️ کفِ بازه هم لازم است، نه فقط سقفش.
+            |
+            | بدون آن، اشتراکی که ۱۲ ساعت دیگر تمام می‌شود در *همین
+            | اجرا* هم در بازه‌ی ۷ روز می‌افتد و هم در بازه‌ی ۱ روز -
+            | یعنی کاربر دو پیامک پشت سر هم می‌گیرد که دو چیز متفاوت
+            | می‌گویند، و هزینه‌اش هم دو برابر است.
+            |
+            | پس هر مرحله فقط بازه‌ی خودش را برمی‌دارد: ۷ روز یعنی
+            | «بین ۱ تا ۷ روز مانده».
             */
             $query->where('status', 'active')
-                ->where('ends_at', '>', $now)
+                ->where('ends_at', '>', $now->copy()->addDays($this->nextStage($daysLeft)))
                 ->where('ends_at', '<=', $now->copy()->addDays($daysLeft));
         } else {
             $query->where('ends_at', '<=', $now)
@@ -85,7 +93,7 @@ class SendSubscriptionRemindersCommand extends Command
 
         $count = 0;
 
-        $query->chunkById(100, function ($subscriptions) use ($sms, $dry, $column, $daysLeft, &$count) {
+        $query->chunkById(100, function ($subscriptions) use ($sms, $dry, $column, $daysLeft, $now, &$count) {
 
             foreach ($subscriptions as $subscription) {
 
@@ -108,7 +116,6 @@ class SendSubscriptionRemindersCommand extends Command
                 }
 
                 $typeLabel = $subscription->type === 'product' ? 'محصولات' : 'خدمات';
-                $name = $subscription->user->username ?: $subscription->user->name;
 
                 /*
                 | وضعیت، به شکل یک عبارت کامل.
@@ -119,27 +126,40 @@ class SendSubscriptionRemindersCommand extends Command
                 | پترن دومی بسازیم.
                 |
                 | «فردا» هم از «تا ۱ روز دیگر» فارسی‌تر است.
+                |
+                | ⚠️ طول‌ها شمرده شده‌اند: بلندترین این عبارت‌ها پیام
+                | را به ۶۵ کاراکتر می‌رساند، یعنی یک صفحه‌ی پیامک
+                | فارسی (سقف ۷۰). هر کلمه‌ای که اینجا اضافه شود،
+                | هزینه‌ی *هر* یادآوری را دو برابر می‌کند.
                 */
+                /*
+                | ⚠️ عددِ واقعی، نه عددِ مرحله.
+                |
+                | $daysLeft سقفِ بازه‌ی این مرحله است. اشتراکی که سه
+                | روز دیگر تمام می‌شود در مرحله‌ی «۷ روز» می‌افتد، و
+                | اگر همان ۷ را می‌گفتیم پیامک دروغ می‌شد.
+                */
+                $remaining = (int) ceil($now->diffInDays($subscription->ends_at, false));
+
                 $state = match (true) {
-                    $daysLeft === 0 => 'تمام شد و آگهی‌هایتان تعلیق شدند',
-                    $daysLeft === 1 => 'فردا تمام می‌شود',
-                    default => sprintf('تا %d روز دیگر تمام می‌شود', $daysLeft),
+                    $daysLeft === 0 => 'تمام شد؛ آگهی‌ها تعلیق شدند',
+                    $remaining <= 1 => 'فردا تمام می‌شود',
+                    default => sprintf('تا %d روز دیگر تمام می‌شود', $remaining),
                 };
 
                 /*
                 | متن پشتیبان، برای وقتی که پترنی ساخته نشده باشد.
-                | اینجا جا هست، پس مهلت شش‌ماهه هم گفته می‌شود.
+                | ارسال آزاد سقف پترن را ندارد، پس اینجا مهلت شش‌ماهه
+                | هم گفته می‌شود.
                 */
                 $message = $daysLeft > 0
                     ? sprintf(
-                        'سازمت | %s عزیز، اشتراک %s شما %s. برای جلوگیری از تعلیق آگهی‌ها آن را تمدید کنید. sazmat.com',
-                        $name,
+                        'سازمت | اشتراک %s شما %s. برای جلوگیری از تعلیق آگهی‌ها آن را تمدید کنید. sazmat.com',
                         $typeLabel,
                         $state
                     )
                     : sprintf(
-                        'سازمت | %s عزیز، اشتراک %s شما به پایان رسید و آگهی‌هایتان تعلیق شد. تا شش ماه فرصت دارید با تمدید، آنها را بازگردانید. sazmat.com',
-                        $name,
+                        'سازمت | اشتراک %s شما به پایان رسید و آگهی‌هایتان تعلیق شد. تا شش ماه فرصت دارید با تمدید، آنها را بازگردانید. sazmat.com',
                         $typeLabel
                     );
 
@@ -153,10 +173,9 @@ class SendSubscriptionRemindersCommand extends Command
 
                     /*
                     | یک پترن برای هر سه مرحله. تفاوتِ مرحله‌ها در
-                    | متغیر سوم ($state) است، نه در پترن.
+                    | $state است، نه در پترن.
                     */
                     $sms->sendRenewalReminder($mobile, $message, [
-                        $name,
                         $typeLabel,
                         $state,
                     ]);
@@ -183,6 +202,28 @@ class SendSubscriptionRemindersCommand extends Command
         $this->line("یادآوری {$label}: {$count} مورد");
 
         return $count;
+    }
+
+    /*
+    | مرحله‌ی کوتاه‌ترِ بعدی، که کفِ بازه‌ی این مرحله است.
+    |
+    | ۷ → ۱ (مرحله‌ی بعدی «۱ روز مانده» است)
+    | ۱ → ۰ (بعدش «منقضی شد»)
+    |
+    | اگر روزی مرحله‌ی تازه‌ای اضافه شد (مثلاً ۳ روز)، فقط همین آرایه
+    | و handle() عوض می‌شوند.
+    */
+    private function nextStage(int $daysLeft): int
+    {
+        $stages = [7, 1, 0];
+
+        foreach ($stages as $stage) {
+            if ($stage < $daysLeft) {
+                return $stage;
+            }
+        }
+
+        return 0;
     }
 
     /*
