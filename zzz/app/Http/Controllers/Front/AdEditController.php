@@ -150,11 +150,23 @@ class AdEditController extends Controller
     {
         $request->merge([
             'phone' => $request->filled('phone') ? normalize_mobile($request->input('phone')) : null,
-            'card_number' => $request->filled('card_number')
-                ? preg_replace('/\D+/', '', fa_to_en_digits($request->input('card_number')))
-                : null,
             'price' => $request->filled('price') ? fa_to_en_digits($request->input('price')) : null,
         ]);
+
+        /*
+        | ⚠️ شماره شبا فقط وقتی دست می‌خورد که واقعاً پرسیده شده باشد.
+        |
+        | اگر بی‌قید و شرط merge شود، وقتی فیلد در فرم نیست مقدارش
+        | null می‌شود، وارد payload می‌رود، و با تأیید ویرایش شماره‌ی
+        | ذخیره‌شده‌ی آگهی پاک می‌شود - بی‌آنکه کسی خواسته باشد.
+        */
+        if (config('marketplace.collect_card_number')) {
+            $request->merge([
+                'card_number' => $request->filled('card_number')
+                    ? preg_replace('/\D+/', '', fa_to_en_digits($request->input('card_number')))
+                    : null,
+            ]);
+        }
 
         $rules = [
             'title' => ['required', 'string', 'max:255'],
@@ -197,8 +209,15 @@ class AdEditController extends Controller
                 'brand' => ['nullable', 'string', 'max:100'],
                 'model' => ['nullable', 'string', 'max:100'],
                 'condition' => ['nullable', Rule::in(['new', 'used'])],
-                'card_number' => ['required', 'digits:24'],
             ];
+
+            /*
+            | بدون این شرط، قانون required روی فیلدی می‌نشیند که در
+            | فرم نیست و هیچ ویرایشی از آب در نمی‌آید.
+            */
+            if (config('marketplace.collect_card_number')) {
+                $rules['card_number'] = ['required', 'digits:24'];
+            }
         } else {
             $rules += [
                 'full_name' => ['required', 'string', 'max:255'],

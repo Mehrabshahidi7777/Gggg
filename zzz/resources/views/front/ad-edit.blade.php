@@ -175,11 +175,21 @@
                         نمی‌شود؛ تمام عرض می‌گیرد و dir=ltr هم دارد تا
                         ارقام از چپ به راست تایپ شوند.
                     --}}
-                    <div class="field field--wide">
-                        <label for="edit-card">شماره شبا (۲۴ رقم، بدون IR) *</label>
-                        <input id="edit-card" type="text" name="card_number" value="{{ old('card_number', $ad->card_number) }}"
-                               inputmode="numeric" dir="ltr" maxlength="24" required>
-                    </div>
+                    {{--
+                        شماره شبا فقط وقتی پرسیده می‌شود که خرید آنلاین
+                        برگردد. توضیح در config/marketplace.php.
+
+                        ⚠️ نکته: وقتی این فیلد نیست، کنترلر هم اصلاً به
+                        card_number دست نمی‌زند - وگرنه با هر ویرایش،
+                        شماره‌ی ذخیره‌شده‌ی آگهی پاک می‌شد.
+                    --}}
+                    @if(config('marketplace.collect_card_number'))
+                        <div class="field field--wide">
+                            <label for="edit-card">شماره شبا (۲۴ رقم، بدون IR) *</label>
+                            <input id="edit-card" type="text" name="card_number" value="{{ old('card_number', $ad->card_number) }}"
+                                   inputmode="numeric" dir="ltr" maxlength="24" required>
+                        </div>
+                    @endif
 
                 @else
 
@@ -270,6 +280,7 @@
                     @if($remainingImages > 0)
                         این آگهی {{ $ad->images->count() }} تصویر دارد و تا سقف {{ \App\Models\Ad::MAX_IMAGES }} تصویر،
                         <b>{{ $remainingImages }} تصویر دیگر</b> می‌توانید اضافه کنید. هرکدام تا ۱۰ مگابایت.
+                        <br><b>لطفاً عکس را از فاصله‌ی دور و به‌صورت افقی بگیرید.</b>
                     @else
                         این آگهی به سقف {{ \App\Models\Ad::MAX_IMAGES }} تصویر رسیده است.
                         برای افزودن تصویر تازه، اول چند تصویر بالا را برای حذف تیک بزنید و ثبت کنید.

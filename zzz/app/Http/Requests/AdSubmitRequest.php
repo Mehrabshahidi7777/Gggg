@@ -20,7 +20,7 @@ public function authorize():bool{return auth()->check();}
 protected function prepareForValidation():void {
 $this->merge(array_filter([
 'phone'=>$this->filled('phone') ? normalize_mobile($this->input('phone')) : null,
-'card_number'=>$this->filled('card_number') ? preg_replace('/\D+/','',fa_to_en_digits($this->input('card_number'))) : null,
+'card_number'=>(config('marketplace.collect_card_number') && $this->filled('card_number')) ? preg_replace('/\D+/','',fa_to_en_digits($this->input('card_number'))) : null,
 'price'=>$this->filled('price') ? fa_to_en_digits($this->input('price')) : null,
 ], fn($v)=>$v!==null));
 }
@@ -46,7 +46,23 @@ $rules=[
 // محصول هم مثل خدمت باشه)، هم آن باگ رفع شد هم خواسته‌ی جدید اعمال شد.
 'images'=>['nullable','array','max:'.\App\Models\Ad::MAX_IMAGES],'images.*'=>'image|mimes:jpg,jpeg,png,webp|max:10240'
 ];
-if($type==='product')$rules+=['phone'=>['required','regex:/^0[0-9]{10}$/'],'brand'=>'nullable|string|max:100','model'=>'nullable|string|max:100','condition'=>['nullable',Rule::in(['new','used'])],'card_number'=>['required','digits:24']];
+if($type==='product'){
+    $rules+=['phone'=>['required','regex:/^0[0-9]{10}$/'],'brand'=>'nullable|string|max:100','model'=>'nullable|string|max:100','condition'=>['nullable',Rule::in(['new','used'])]];
+
+    /*
+    | شماره شبا فقط وقتی خرید آنلاین برگردد. توضیح در
+    | config/marketplace.php.
+    |
+    | ⚠️ آکولاد اینجا لازم است، نه تزئینی: اولین بار این شرط را
+    | بدون آن نوشتم و else پایین به جای if($type==='product') به
+    | همین if چسبید - یعنی وقتی کلید خاموش بود، قوانینِ «خدمت»
+    | روی آگهی محصول اعمال می‌شد و ثبت محصول می‌خواست نام
+    | ارائه‌دهنده و عنوان خدمت بدهی.
+    */
+    if(config('marketplace.collect_card_number')){
+        $rules+=['card_number'=>['required','digits:24']];
+    }
+}
 else $rules+=['phone'=>['required','regex:/^0[0-9]{10}$/'],'full_name'=>'required|string|max:255','service_title'=>'required|string|max:255','website'=>'nullable|url|max:255'];
 return $rules;
 }
