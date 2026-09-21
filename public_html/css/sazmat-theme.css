@@ -1336,3 +1336,35 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
 .featured-head--spaced { margin-top: 56px; }
 
 .featured-pager { margin-top: 28px; }
+
+/* ==========================================================================
+   آگهیِ موقتاً خاموش
+   ==========================================================================
+
+   رنگ سرمه‌ایِ کم‌رنگ است نه کهربایی: کهربایی برای تعلیقِ سیستمی
+   (اشتراک تمام شده) است که کاربر باید کاری درباره‌اش بکند. خاموشیِ
+   خودخواسته هشدار نیست، یک وضعیت عادی است.
+   ========================================================================== */
+
+.panel-paused {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-blueprint-tint);
+  color: var(--color-ink);
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.panel-paused-note {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border-inline-start: 4px solid var(--color-blueprint);
+  background: var(--color-blueprint-tint);
+  color: var(--color-steel);
+  font-size: 0.85rem;
+  line-height: 1.9;
+}
+.panel-paused-note b { color: var(--color-ink); }

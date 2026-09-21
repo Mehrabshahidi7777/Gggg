@@ -232,6 +232,26 @@
                                 <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                                     <a class="btn btn-ghost btn-sm" href="{{ route('ad.edit', $product) }}">ویرایش اطلاعات</a>
 
+                                    {{--
+                                        خاموش‌کردن موقت، به‌جای حذف.
+
+                                        تا امروز تنها راهِ پنهان‌کردن آگهی،
+                                        پاک‌کردنش بود - یعنی از دست دادن
+                                        عکس‌ها، امتیازها و نظرها، و بعد ساختن
+                                        از نو.
+                                    --}}
+                                    @if($product->paused_at)
+                                        <form method="POST" action="{{ route('ad.resume', $product) }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-navy btn-sm">روشن کردن آگهی</button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="{{ route('ad.pause', $product) }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-ghost btn-sm">خاموش کردن موقت</button>
+                                        </form>
+                                    @endif
+
                                     @if($pending)
                                         <span style="font-size:.75rem;color:var(--color-amber);font-weight:800;">
                                             ویرایش در انتظار تأیید مدیر
@@ -242,11 +262,21 @@
 
                             @if($product->is_suspended)
                                 <span class="text-xs bg-amber-100 text-amber-800 rounded-lg px-3 py-2 whitespace-nowrap">تعلیق شده</span>
+                            @elseif($product->paused_at)
+                                <span class="panel-paused">موقتاً خاموش</span>
                             @elseif($product->status === 'approved')
                                 <span class="text-xs bg-green-100 text-green-800 rounded-lg px-3 py-2 whitespace-nowrap">فعال</span>
                             @endif
 
                         </div>
+
+                        @if($product->paused_at && ! $product->is_suspended)
+                            <div class="panel-paused-note">
+                                این آگهی را خودت موقتاً خاموش کرده‌ای، پس در سایت دیده نمی‌شود.
+                                عکس‌ها، امتیازها و نظرهایش سر جایشان هستند.
+                                <b>ساعتِ اشتراک متوقف نمی‌شود.</b>
+                            </div>
+                        @endif
 
                         @if($product->is_suspended)
                             <div class="bg-amber-50 text-amber-800 rounded-xl p-3 mt-4 text-sm leading-6">

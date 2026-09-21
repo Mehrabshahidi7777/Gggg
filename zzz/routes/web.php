@@ -20,6 +20,7 @@ use App\Http\Controllers\Front\SitemapController;
 use App\Http\Controllers\Front\AdEditController;
 use App\Http\Controllers\Front\ActivityController;
 use App\Http\Controllers\Front\FeaturedController;
+use App\Http\Controllers\Front\AdVisibilityController;
 
 
 /*
@@ -257,6 +258,20 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/my-ads/{ad}/edit', [AdEditController::class, 'cancel'])
         ->name('ad.edit.cancel');
+
+
+    /*
+    | خاموش و روشن کردن موقتِ آگهی.
+    |
+    | جدا از تعلیقِ سیستمی (is_suspended) که زمان‌بند با پایان اشتراک
+    | می‌گذارد. توضیح کامل در AdVisibilityController.
+    */
+
+    Route::post('/my-ads/{ad}/pause', [AdVisibilityController::class, 'pause'])
+        ->name('ad.pause');
+
+    Route::post('/my-ads/{ad}/resume', [AdVisibilityController::class, 'resume'])
+        ->name('ad.resume');
 
 
     /*

@@ -25,7 +25,7 @@ class Ad extends Model
         'user_id','category_id','province_id','city_id','type','title','slug',
         'description','price','brand','model','condition','full_name',
         'service_title','address','phone','card_number','website','status','is_featured',
-        'views_count','expires_at','is_suspended','suspended_at'
+        'views_count','expires_at','is_suspended','suspended_at','paused_at'
     ];
 
     protected $casts = [
@@ -70,6 +70,7 @@ class Ad extends Model
         'is_suspended' => 'boolean',
         'expires_at' => 'datetime',
         'suspended_at' => 'datetime',
+        'paused_at' => 'datetime',
 
         // شماره شبا در دیتابیس رمزنگاری‌شده ذخیره/خوانده می‌شود. این کار
         // کاملاً شفاف است: هر جای کد که $ad->card_number را بخواند یا
@@ -422,14 +423,22 @@ class Ad extends Model
     protected function statusText(): Attribute
     {
         return Attribute::make(
+            /*
+            | ترتیب مهم است: تعلیقِ سیستمی (اشتراک تمام شده) بر
+            | خاموشیِ خودخواسته مقدم است، چون کاربر باید اول آن را
+            | حل کند - روشن‌کردن آگهی تا وقتی اشتراک نباشد کاری از
+            | پیش نمی‌برد.
+            */
             get: fn() => $this->is_suspended
                 ? 'در حالت تعلیق'
+                : ($this->paused_at
+                ? 'موقتاً غیرفعال'
                 : match ($this->status) {
                     'pending' => 'در انتظار تأیید',
                     'approved' => 'تأیید شده',
                     'rejected' => 'رد شده',
                     default => 'نامشخص',
-                }
+                })
         );
     }
 
@@ -441,9 +450,16 @@ class Ad extends Model
         | اشتراک محصول هم اضافه شده و محصول هم می‌تواند suspend شود،
         | این چک باید بدون توجه به نوع، برای هر دو یکسان اعمال شود.
         */
+        /*
+        | paused_at یعنی خودِ ارائه‌دهنده آگهی را موقتاً خاموش کرده
+        | (جنس تمام شده، سرش شلوغ است). چون این شرط همین‌جا نشسته،
+        | همه‌ی مسیرها - فهرست، صفحه‌ی اصلی، جست‌وجو، صفحه‌ی آگهی و
+        | نقشه‌ی سایت - با یک جا اضافه‌شدن پوشش داده می‌شوند.
+        */
         return $q
             ->where('status', 'approved')
             ->where('is_suspended', false)
+            ->whereNull('paused_at')
             ->where(fn($x) => $x->whereNull('expires_at')->orWhere('expires_at', '>', now()));
     }
 
