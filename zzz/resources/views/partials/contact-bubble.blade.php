@@ -18,8 +18,35 @@
 
 <div class="chat-bubble" data-chat>
 
+    {{--
+        برچسب راهنما.
+
+        دایره‌ی تنها برای کسی که این الگو را ندیده مبهم است. این
+        برچسب یک بار می‌گوید آنجا چه خبر است و با اولین اسکرول
+        می‌رود، چون تا آن لحظه کارش را کرده.
+
+        aria-hidden و tabindex=-1 عمدی‌اند: خودِ دکمه‌ی گرد
+        aria-label دارد، پس صفحه‌خوان و کیبورد از همان‌جا می‌فهمند
+        و این برچسب برایشان فقط تکرار است. ولی دکمه هست نه span،
+        تا کلیکِ کاربرِ بینا روی آن هم پنل را باز کند.
+    --}}
+    <button type="button"
+            class="chat-bubble__hint"
+            data-chat-hint
+            data-chat-toggle
+            aria-hidden="true"
+            tabindex="-1"
+            hidden>ارتباط با ما</button>
+
+    {{--
+        data-chat-fab جداست چون دکمه‌ی گرد تنها چیزی است که
+        aria-expanded و فوکوس رویش می‌نشیند. حالا دو عنصر
+        data-chat-toggle دارند، و querySelector تنها اولی را
+        برمی‌گرداند - که برچسب است، نه دکمه.
+    --}}
     <button type="button"
             class="chat-bubble__fab"
+            data-chat-fab
             data-chat-toggle
             aria-expanded="false"
             aria-controls="chat-bubble-panel"

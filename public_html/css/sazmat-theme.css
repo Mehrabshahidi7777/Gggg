@@ -1179,6 +1179,73 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
    دارد. به جایش دکمه کمی فرو می‌رود تا معلوم باشد فعال است. */
 .chat-bubble.is-open .chat-bubble__fab { background: #16375c; }
 
+/* --------------------------------------------------------------------------
+   برچسب راهنما
+
+   دایره‌ی تنها برای کسی که این الگو را ندیده مبهم است. یک بار
+   می‌گوید آنجا چه خبر است و با اولین اسکرول می‌رود (منطقش در
+   layouts/app.blade.php).
+
+   با hidden شروع می‌شود، پس بدون جاوااسکریپت اصلاً دیده نمی‌شود -
+   و همین درست است: چیزی که خودش بسته نمی‌شود نباید باز شود.
+   -------------------------------------------------------------------------- */
+
+.chat-bubble__hint {
+  /*
+     ⚠️ position: absolute اجباری است، نه سلیقه.
+
+     ظرف، ستونی با align-items: flex-end است - و در صفحه‌ی RTL،
+     flex-end یعنی *چپ*. برچسب از دایره پهن‌تر است، پس اگر در جریان
+     بماند عرض ظرف را باز می‌کند و دایره را از گوشه‌ی راست به داخل
+     صفحه هل می‌دهد. در کرومیوم اندازه گرفته شد: ۲۱px جابه‌جایی.
+
+     بیرون از جریان، عرض ظرف دست‌نخورده می‌ماند.
+
+     bottom = ارتفاع دایره (۵۶) + ۸ فاصله.
+  */
+  position: absolute;
+  bottom: 64px;
+  right: 0;
+  padding: 8px 14px;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  border-radius: 999px;
+  /* سفید روی این سرمه‌ای ۱۳.۵:۱ - همان ترکیب خودِ دایره. */
+  background: var(--color-ink);
+  color: #fff;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+}
+
+.chat-bubble__hint[hidden] { display: none; }
+
+.chat-bubble.hint-in .chat-bubble__hint { opacity: 1; transform: none; }
+
+/* نوکِ فلش، دقیقاً روی مرکز دایره‌ی ۵۶ پیکسلی:
+   مرکز = ۲۸px از لبه‌ی راست، و مثلث ۱۲px پهناست. */
+.chat-bubble__hint::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 22px;
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-bubble__hint { transition: none; transform: none; }
+}
+
 .chat-bubble__panel {
   width: 330px;
   max-width: calc(100vw - 32px);
@@ -1262,6 +1329,9 @@ html[dir="ltr"] .hero-stat-cta::after { content: "\2192"; }
   .chat-bubble { bottom: 14px; right: 14px; }
   .chat-bubble__fab { width: 50px; height: 50px; }
   .chat-bubble__panel { width: calc(100vw - 28px); }
+  /* دایره ۵۰ شد: ارتفاعش کمتر و مرکزش ۲۵px از لبه است، نه ۲۸. */
+  .chat-bubble__hint { bottom: 58px; }
+  .chat-bubble__hint::after { right: 19px; }
 }
 
 /* چاپ: دکمه‌ی شناور روی کاغذ معنی ندارد. */

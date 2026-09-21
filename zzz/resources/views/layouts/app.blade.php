@@ -914,7 +914,8 @@
           const root=document.querySelector('[data-chat]');
           if(!root) return;
 
-          const fab=root.querySelector('[data-chat-toggle]');
+          const fab=root.querySelector('[data-chat-fab]');
+          const hint=root.querySelector('[data-chat-hint]');
           const panel=root.querySelector('#chat-bubble-panel');
           const form=root.querySelector('[data-chat-form]');
           const done=root.querySelector('[data-chat-done]');
@@ -924,12 +925,59 @@
           panel.hidden=!yes;
           fab.setAttribute('aria-expanded',yes?'true':'false');
           root.classList.toggle('is-open',yes);
-          if(yes){ panel.querySelector('input[name="name"]')?.focus(); }
+          if(yes){ dismissHint(); panel.querySelector('input[name="name"]')?.focus(); }
           else { fab.focus(); }
           };
 
-          fab.addEventListener('click',()=>open(panel.hidden));
+          /*
+           * هر دو عنصرِ toggle (دکمه‌ی گرد و برچسب راهنما) پنل را باز
+           * می‌کنند. querySelectorAll لازم است، نه querySelector.
+           */
+          root.querySelectorAll('[data-chat-toggle]')
+          .forEach(b=>b.addEventListener('click',()=>open(panel.hidden)));
+
           root.querySelectorAll('[data-chat-close]').forEach(b=>b.addEventListener('click',()=>open(false)));
+
+          /*
+           * برچسب راهنما.
+           *
+           * دایره‌ی تنها برای کسی که این الگو را ندیده مبهم است. برچسب
+           * یک بار می‌گوید آنجا چه خبر است و با اولین اسکرول می‌رود،
+           * چون تا آن لحظه کارش را کرده.
+           *
+           * ⚠️ فقط یک بار در هر نشست. کسی که ده صفحه را می‌گردد نباید
+           * ده بار همین جمله را ببیند.
+           *
+           * sessionStorage در حالت ناشناس یا با کوکی بسته، خواندن و
+           * نوشتنش استثنا پرتاب می‌کند. پس هر دو در try نشسته‌اند و
+           * اگر در دسترس نبود، برچسب مثل قبل نشان داده می‌شود -
+           * حداکثر یک بار اضافه، که از خطای جاوااسکریپت بهتر است.
+           */
+          const SEEN='sazmat.chatHintSeen';
+
+          function dismissHint(){
+          if(!hint||hint.hidden) return;
+          hint.hidden=true;
+          try{ sessionStorage.setItem(SEEN,'1'); }catch(e){}
+          }
+
+          if(hint){
+          let seen=false;
+          try{ seen=sessionStorage.getItem(SEEN)==='1'; }catch(e){}
+
+          /*
+           * اگر کاربر با لنگر وسط صفحه آمده باشد (یا مرورگر جای قبلی
+           * را برگردانده)، اسکرول از همان اول غیرصفر است و رویداد
+           * scroll شاید هرگز نیاید. آن‌وقت برچسب تا پایان نشست
+           * می‌ماند - پس اصلاً نشانش نمی‌دهیم.
+           */
+          if(!seen&&window.scrollY<40){
+          hint.hidden=false;
+          requestAnimationFrame(()=>root.classList.add('hint-in'));
+
+          addEventListener('scroll',dismissHint,{once:true,passive:true});
+          }
+          }
 
           document.addEventListener('keydown',e=>{
           if(e.key==='Escape'&&!panel.hidden) open(false);

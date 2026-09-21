@@ -170,6 +170,76 @@ class ContactBubbleTest extends TestCase
         $this->assertStringContainsString('aria-expanded="false"', $html);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | برچسب راهنما
+    |--------------------------------------------------------------------------
+    |
+    | دایره‌ی تنها برای کسی که این الگو را ندیده مبهم است. یک برچسب
+    | کوچک بالایش می‌گوید آنجا چه خبر است و با اولین اسکرول می‌رود.
+    |
+    | ⚠️ رفتارش (ظاهر شدن، رفتن با اسکرول، یک‌بار در هر نشست) در
+    | کرومیوم اندازه‌گیری شد. آنچه اینجا قفل می‌شود، قلاب‌هایی است که
+    | آن رفتار بدون‌شان بی‌صدا می‌میرد.
+    */
+    public function test_the_hint_sits_in_the_markup_and_starts_hidden(): void
+    {
+        $html = $this->get(route('home'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<button[^>]*data-chat-hint[^>]*hidden[^>]*>\s*ارتباط با ما/u',
+            $html,
+            'برچسب باید با hidden شروع شود؛ نمایشش کار جاوااسکریپت است.'
+        );
+    }
+
+    /*
+    | مهم‌ترین تستِ این تغییر.
+    |
+    | اسکریپت لایه با querySelector('[data-chat-toggle]') دکمه‌ی گرد را
+    | پیدا می‌کرد. حالا دو عنصر آن نشانه را دارند و querySelector اولی
+    | را برمی‌گرداند - یعنی برچسب. آن‌وقت aria-expanded روی برچسب
+    | می‌نشست و فوکوسِ بعد از بستن به جای نامرئی می‌رفت.
+    |
+    | پس دکمه‌ی گرد نشانه‌ی خودش را دارد.
+    */
+    public function test_the_round_button_keeps_a_hook_of_its_own(): void
+    {
+        $html = $this->get(route('home'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<button[^>]*class="chat-bubble__fab"[^>]*data-chat-fab/s',
+            $html,
+            'دکمه‌ی گرد باید data-chat-fab داشته باشد.'
+        );
+
+        $this->assertStringContainsString(
+            "root.querySelector('[data-chat-fab]')",
+            $html,
+            'اسکریپت باید دکمه‌ی گرد را با نشانه‌ی خودش بگیرد، نه با data-chat-toggle.'
+        );
+
+        /*
+        | و کلیک باید به هر دو وصل شود، وگرنه برچسب دکمه‌ای است که
+        | هیچ کاری نمی‌کند.
+        */
+        $this->assertStringContainsString(
+            "root.querySelectorAll('[data-chat-toggle]')",
+            $html
+        );
+    }
+
+    /*
+    | همان دام بالا: data-chat-hint در اسکریپت لایه هم هست و اسکریپت
+    | روی هر صفحه‌ای می‌آید. نشانه‌ای لازم است که فقط در مارک‌آپ باشد.
+    */
+    public function test_the_hint_is_not_on_the_contact_page(): void
+    {
+        $this->get(route('contact'))
+            ->assertOk()
+            ->assertDontSee('class="chat-bubble__hint"', false);
+    }
+
     public function test_the_bubble_is_styled(): void
     {
         $css = file_get_contents(base_path('../public_html/css/sazmat-theme.css'));
@@ -185,5 +255,30 @@ class ContactBubbleTest extends TestCase
             $css,
             'دکمه باید با right جای‌گذاری شود، نه inset-inline-end.'
         );
+    }
+
+    /*
+    | ⚠️ این یکی هم دام RTL است، و در کرومیوم ۲۱ پیکسل جابه‌جایی
+    | نشان داد.
+    |
+    | ظرفِ حباب، ستونی با align-items: flex-end است - و در صفحه‌ی
+    | راست‌به‌چپ، flex-end یعنی چپ. برچسب از دایره پهن‌تر است، پس اگر
+    | در جریان بماند عرض ظرف را باز می‌کند و دایره را از گوشه‌ی راست
+    | به وسط صفحه هل می‌دهد.
+    |
+    | position: absolute آن را بیرون از جریان نگه می‌دارد.
+    */
+    public function test_the_hint_is_taken_out_of_the_flow(): void
+    {
+        $css = file_get_contents(base_path('../public_html/css/sazmat-theme.css'));
+
+        $this->assertMatchesRegularExpression(
+            '/\.chat-bubble__hint\s*\{[^}]*position:\s*absolute/s',
+            $css,
+            'برچسب باید absolute باشد، وگرنه دایره را از گوشه جابه‌جا می‌کند.'
+        );
+
+        /* و با hidden پنهان شود، چون جاوااسکریپت با همان کار می‌کند. */
+        $this->assertStringContainsString('.chat-bubble__hint[hidden] { display: none; }', $css);
     }
 }
