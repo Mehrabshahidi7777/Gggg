@@ -7,6 +7,7 @@ use App\Models\ServiceAdDraft;
 use App\Models\ServiceSubscription;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 /*
@@ -49,10 +50,28 @@ class CleanupCommand extends Command
             $this->warn('حالت آزمایشی: هیچ چیزی حذف نمی‌شود.');
         }
 
-        $this->cleanOrphanImages($dry);
-        $this->cleanAbandonedSubscriptions($dry);
-        $this->cleanOtps($dry);
-        $this->cleanExpiredDrafts($dry);
+        $summary = [
+            'تصاویر بی‌صاحب' => $this->cleanOrphanImages($dry),
+            'اشتراک رهاشده' => $this->cleanAbandonedSubscriptions($dry),
+            'کد یک‌بارمصرف' => $this->cleanOtps($dry),
+            'پیش‌نویس منقضی' => $this->cleanExpiredDrafts($dry),
+            'آزمایشی' => $dry,
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | یک خط در laravel.log
+        |--------------------------------------------------------------------------
+        |
+        | ⚠️ خروجی این دستور در کرون به /dev/null می‌رود، پس تا امروز
+        | هیچ‌جا معلوم نبود چه کرده - و وقتی زمان‌بند اصلاً صدایش
+        | نمی‌زد هم دقیقاً همین‌قدر سکوت بود. یعنی «کار می‌کند» و
+        | «هرگز اجرا نشده» از بیرون یک شکل داشتند.
+        |
+        | یک خط لاگ این دو را از هم جدا می‌کند: اگر در laravel.log
+        | نباشد، یعنی اجرا نشده.
+        */
+        Log::info('sazmat:cleanup', $summary);
 
         $this->info('پاک‌سازی به پایان رسید.');
 
@@ -64,13 +83,14 @@ class CleanupCommand extends Command
     | ۱) فایل‌های تصویرِ بدون مرجع در دیتابیس
     |--------------------------------------------------------------------------
     */
-    private function cleanOrphanImages(bool $dry): void
+    private function cleanOrphanImages(bool $dry): int
     {
         $disk = Storage::disk('public');
 
         if (! $disk->exists('ads')) {
             $this->line('پوشه‌ی ads وجود ندارد؛ رد شد.');
-            return;
+
+            return 0;
         }
 
         /*
@@ -149,6 +169,8 @@ class CleanupCommand extends Command
             $deleted,
             number_format($bytes / 1048576, 2)
         ));
+
+        return $deleted;
     }
 
     /*
@@ -161,7 +183,7 @@ class CleanupCommand extends Command
     | دیگر هیچ callbackی برایشان نمی‌آید.
     |
     */
-    private function cleanAbandonedSubscriptions(bool $dry): void
+    private function cleanAbandonedSubscriptions(bool $dry): int
     {
         $query = ServiceSubscription::query()
             ->where('status', 'pending')
@@ -175,6 +197,8 @@ class CleanupCommand extends Command
         }
 
         $this->line("اشتراک‌های پرداخت‌نشده‌ی رهاشده: {$count} ردیف");
+
+        return $count;
     }
 
     /*
@@ -187,7 +211,7 @@ class CleanupCommand extends Command
     | می‌کند. یک روز فرصت برای بررسی/لاگ کافی است.
     |
     */
-    private function cleanOtps(bool $dry): void
+    private function cleanOtps(bool $dry): int
     {
         $query = DB::table('login_otps')->where('expires_at', '<=', now()->subDay());
 
@@ -198,6 +222,8 @@ class CleanupCommand extends Command
         }
 
         $this->line("کدهای یک‌بارمصرف منقضی: {$count} ردیف");
+
+        return $count;
     }
 
     /*
@@ -205,7 +231,7 @@ class CleanupCommand extends Command
     | ۴) پیش‌نویس‌های منقضی و فایل‌هایشان
     |--------------------------------------------------------------------------
     */
-    private function cleanExpiredDrafts(bool $dry): void
+    private function cleanExpiredDrafts(bool $dry): int
     {
         $drafts = ServiceAdDraft::where('expires_at', '<=', now())->get();
 
@@ -223,5 +249,7 @@ class CleanupCommand extends Command
         }
 
         $this->line('پیش‌نویس‌های منقضی: ' . $drafts->count() . ' ردیف');
+
+        return $drafts->count();
     }
 }

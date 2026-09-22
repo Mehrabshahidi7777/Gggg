@@ -41,10 +41,31 @@ class SendSubscriptionRemindersCommand extends Command
             $this->warn('حالت آزمایشی: هیچ پیامکی ارسال نمی‌شود.');
         }
 
-        $sent = 0;
-        $sent += $this->stage($sms, $dry, 'reminder_7d_sent_at', 7);
-        $sent += $this->stage($sms, $dry, 'reminder_1d_sent_at', 1);
-        $sent += $this->stage($sms, $dry, 'reminder_expired_sent_at', 0);
+        $summary = [
+            '۷ روز مانده' => $this->stage($sms, $dry, 'reminder_7d_sent_at', 7),
+            'فردا' => $this->stage($sms, $dry, 'reminder_1d_sent_at', 1),
+            'تمام شد' => $this->stage($sms, $dry, 'reminder_expired_sent_at', 0),
+            'آزمایشی' => $dry,
+        ];
+
+        $sent = $summary['۷ روز مانده'] + $summary['فردا'] + $summary['تمام شد'];
+
+        /*
+        |--------------------------------------------------------------------------
+        | یک خط در laravel.log
+        |--------------------------------------------------------------------------
+        |
+        | ⚠️ خروجی این دستور در کرون به /dev/null می‌رود.
+        |
+        | تا امروز هیچ‌جا معلوم نبود این دستور چه کرده - و وقتی
+        | زمان‌بند اصلاً صدایش نمی‌زد هم دقیقاً همین‌قدر سکوت بود.
+        | یعنی «کار می‌کند» و «هرگز اجرا نشده» از بیرون یک شکل
+        | داشتند، و همین باعث شد ماه‌ها کسی متوجه نشود.
+        |
+        | حالا اگر این خط در laravel.log نباشد، یعنی اجرا نشده. صفر
+        | بودنِ عددها هم خودش خبر است، نه سکوت.
+        */
+        Log::info('sazmat:subscription-reminders', $summary);
 
         $this->info("مجموع پیامک‌های ارسال‌شده: {$sent}");
 
