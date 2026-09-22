@@ -200,9 +200,19 @@ class SubscriptionReminderTest extends TestCase
     }
 
     /* «تا ۱ روز دیگر» فارسی نیست؛ «فردا» است. */
+    /*
+    | ⚠️ ساعت ثابت می‌شود، وگرنه تست شکننده است.
+    |
+    | نسخه‌ی قبلی «الان + ۱۲ ساعت» می‌گذاشت. اگر مجموعه‌ی تست صبح
+    | اجرا می‌شد آن لحظه هنوز امروز بود و اگر عصر اجرا می‌شد فردا -
+    | یعنی نتیجه به ساعتِ اجرای تست بستگی داشت، نه به کد.
+    */
     public function test_the_last_day_says_tomorrow(): void
     {
-        $this->subscription($this->user(), now()->addHours(12));
+        $this->travelTo('2026-06-01 10:00:00');
+
+        /* فردا، ساعت ۹ صبح: هنوز داخل بازه‌ی «۱ روز مانده». */
+        $this->subscription($this->user(), '2026-06-02 09:00:00');
 
         $sms = $this->fakeSms();
         $sms->shouldReceive('sendRenewalReminder')->once()->with(
@@ -212,6 +222,69 @@ class SubscriptionReminderTest extends TestCase
         );
 
         $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    /*
+    | و اگر همین امروز تمام شود، «فردا» غلط است.
+    |
+    | اشتراکی که ساعت ۱۴ امروز تمام می‌شود، در اجرای ساعت ۱۰ هنوز
+    | زنده است و داخل بازه‌ی «۱ روز مانده» می‌افتد - ولی کاربر چهار
+    | ساعت وقت دارد، نه یک روز.
+    */
+    public function test_a_subscription_ending_today_says_today(): void
+    {
+        $this->travelTo('2026-06-01 10:00:00');
+
+        $this->subscription($this->user(), '2026-06-01 14:00:00');
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')->once()->with(
+            '09121234567',
+            Mockery::any(),
+            Mockery::on(fn ($v) => $v[1] === 'امروز تمام می‌شود')
+        );
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | عدد باید به روزِ درست ختم شود
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ این همان اشکالی است که با سؤال کاربر پیدا شد.
+    |
+    | اشتراکی که ۱۹ نوامبر ساعت ۱۴:۰۹ تمام می‌شود، در اجرای ۱۳
+    | نوامبر ساعت ۱۰ دقیقاً ۶٫۱۷ روز مانده دارد. با ceil می‌شد ۷، و
+    | کاربر ۱۳ + ۷ = ۲۰ حساب می‌کرد - یک روز دیرتر از انقضای واقعی،
+    | که می‌توانست به قیمت تعلیق‌شدنِ آگهی‌اش تمام شود.
+    |
+    | عدد باید طوری باشد که «امروز + n» همان روزِ انقضا شود.
+    */
+    public function test_the_number_lands_on_the_real_expiry_day(): void
+    {
+        $this->travelTo('2026-11-13 10:00:00');
+
+        $this->subscription($this->user(), '2026-11-19 14:09:00');
+
+        $captured = null;
+
+        $sms = $this->fakeSms();
+        $sms->shouldReceive('sendRenewalReminder')
+            ->once()
+            ->andReturnUsing(function ($mobile, $message, $values) use (&$captured) {
+                $captured = $values[1];
+            });
+
+        $this->artisan('sazmat:subscription-reminders')->assertSuccessful();
+
+        $this->assertSame('تا 6 روز دیگر تمام می‌شود', $captured);
+
+        /* و همان ۶ باید به ۱۹ نوامبر برسد، نه ۲۰. */
+        $this->assertSame(
+            '2026-11-19',
+            now()->addDays(6)->toDateString()
+        );
     }
 
     /*
