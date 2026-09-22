@@ -97,19 +97,23 @@ class HeaderAuthButtonsTest extends TestCase
 
     /*
     |--------------------------------------------------------------------------
-    | هدرِ کاربرِ واردشده روی گوشی
+    | دکمه‌ی «پنل کاربری» متن دارد، نه فقط آیکون
     |--------------------------------------------------------------------------
     |
-    | ⚠️ این هدر با هدرِ مهمان فرق دارد، و تا امروز فقط حالتِ مهمان
-    | اندازه‌گیری شده بود.
+    | ⚠️ این تست از یک اشتباه واقعی آمده.
     |
-    | کاربرِ واردشده سه چیز در هدر دارد - «ثبت آگهی»، «پنل کاربری» و
-    | دکمه‌ی منو - و جمعشان با لوگو در صفحه‌ی ۳۶۰ پیکسلی ۴۱۵ می‌شد:
-    | ۴۲ پیکسل اسکرول افقی، در همه‌ی صفحه‌ها.
+    | یک بار متنِ این دکمه را روی گوشی پنهان کردم، چون در اندازه‌گیری
+    | دیده بودم هدر ۴۲ پیکسل از عرض صفحه بیرون می‌زند. ولی آن
+    | اندازه‌گیری غلط بود: در نسخه‌ی محلی، فایل لوگو کنار صفحه نبود و
+    | مرورگر به‌جایش متنِ جایگزین («Sazmat Construction») را رندر
+    | می‌کرد - ۱۲۴ پیکسل، در حالی که خودِ لوگو ۶۴ پیکسل است.
     |
-    | در کرومیوم اندازه گرفته شد؛ اینجا قلاب‌هایش قفل می‌شود.
+    | یعنی سرریزی وجود نداشت و من چیزی را که سالم بود «درست» کردم.
+    |
+    | درسش: هر اندازه‌گیریِ چیدمان باید با تصویرهای واقعی انجام شود،
+    | وگرنه متنِ جایگزین عرض‌ها را به هم می‌ریزد.
     */
-    public function test_the_account_button_is_reachable_by_screen_readers(): void
+    public function test_the_account_button_keeps_its_label(): void
     {
         $user = User::create([
             'name' => 'کاربر',
@@ -118,35 +122,21 @@ class HeaderAuthButtonsTest extends TestCase
             'password' => 'secret-password',
         ]);
 
-        $html = $this->actingAs($user)->get(route('home'))->assertOk()->getContent();
-
-        /*
-        | روی گوشی متنِ کنارِ آیکون پنهان می‌شود، پس بدون aria-label
-        | دکمه برای صفحه‌خوان بی‌نام می‌ماند.
-        */
-        $this->assertMatchesRegularExpression(
-            '/<button[^>]*class="account-trigger"[^>]*aria-label="پنل کاربری"/u',
-            $html
-        );
+        $this->actingAs($user)
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee('پنل کاربری', false);
     }
 
-    public function test_the_signed_in_header_fits_a_phone(): void
+    /* و هیچ قانونی در CSS نباید آن متن را پنهان کند. */
+    public function test_no_css_rule_hides_the_account_label(): void
     {
         $css = file_get_contents(base_path('../public_html/css/sazmat-theme.css'));
 
-        /* متنِ کنارِ آیکون روی گوشی برداشته می‌شود. */
-        $this->assertStringContainsString(
+        $this->assertStringNotContainsString(
             '.account-trigger > span:not([data-icon]) { display: none; }',
-            $css
-        );
-
-        /*
-        | و دکمه زیر ۴۴ پیکسل نمی‌رود: آیکونِ تنها هدفِ کوچکی است و
-        | کوچک‌تر از این با انگشت زده نمی‌شود.
-        */
-        $this->assertMatchesRegularExpression(
-            '/\.account-trigger\s*\{[^}]*min-height:\s*44px/s',
-            $css
+            $css,
+            'متنِ «پنل کاربری» دوباره پنهان شده است.'
         );
     }
 }

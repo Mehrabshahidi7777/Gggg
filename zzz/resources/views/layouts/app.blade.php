@@ -185,13 +185,7 @@
 
           <div class="account-menu">
           <div class="account-trigger-wrap">
-          {{--
-              aria-label لازم است، نه تزئینی: روی گوشی متنِ کنار آیکون
-              با CSS پنهان می‌شود (جا نمی‌شد و صفحه را به پهلو
-              می‌لغزاند)، و بدون این، دکمه برای صفحه‌خوان بی‌نام
-              می‌ماند.
-          --}}
-          <button type="button" class="account-trigger" id="account-toggle" aria-expanded="false" aria-controls="account-dropdown" aria-label="پنل کاربری">
+          <button type="button" class="account-trigger" id="account-toggle" aria-expanded="false" aria-controls="account-dropdown">
           <span data-icon="users"></span>
           <span>پنل کاربری</span>
           </button>
