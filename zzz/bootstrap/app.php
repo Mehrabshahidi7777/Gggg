@@ -9,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 
 $app = Application::configure(basePath: dirname(__DIR__))
@@ -189,7 +190,33 @@ $app = Application::configure(basePath: dirname(__DIR__))
         | این کار بدون هیچ تنظیم اضافه‌ای هر شب ساعت ۳ اجرا می‌شود.
         |
         */
-        $schedule->command('sazmat:cleanup')
+        /*
+        | ⚠️ call + Artisan::call، نه command().
+        |
+        | proc_open روی این هاست غیرفعال است. $schedule->command() برای
+        | هر دستور یک پروسه‌ی جدا باز می‌کند و بدون proc_open همان‌جا
+        | استثنا می‌دهد:
+        |
+        |   The Process class relies on proc_open, which is not
+        |   available on your PHP installation.
+        |
+        | و بدترین بخشش این بود که در cron.log «DONE» چاپ می‌شد - چون
+        | زمان‌بند خطا را می‌گیرد و در laravel.log می‌نویسد، ولی خروجیِ
+        | خودش موفق به نظر می‌رسد. یعنی این دستور از روز اول هرگز اجرا
+        | نشده بود و لاگ هم می‌گفت اجرا شده.
+        |
+        | نشانه‌اش همین بود: ۲۴ میلی‌ثانیه «اجرا»، و OTPهای مرداد که
+        | هنوز در جدول بودند.
+        |
+        | Artisan::call همان دستور را داخل همین پروسه اجرا می‌کند، پس
+        | نه به proc_open نیاز دارد نه به چیز دیگری. کارهای دیگرِ این
+        | زمان‌بند (Callbackهای ساعتی) از اول هم بسته‌ای بودند و درست
+        | کار می‌کردند - به همین دلیل کسی متوجه نشده بود.
+        */
+        $schedule->call(function (): void {
+            Artisan::call('sazmat:cleanup');
+        })
+            ->name('sazmat:cleanup')
             ->dailyAt('03:00')
             ->withoutOverlapping();
 
@@ -203,7 +230,11 @@ $app = Application::configure(basePath: dirname(__DIR__))
         | بیدار است و می‌تواند همان لحظه اقدام کند.
         |
         */
-        $schedule->command('sazmat:subscription-reminders')
+        /* همان دلیل بالا: بدون proc_open، command() اجرا نمی‌شود. */
+        $schedule->call(function (): void {
+            Artisan::call('sazmat:subscription-reminders');
+        })
+            ->name('sazmat:subscription-reminders')
             ->dailyAt('10:00')
             ->withoutOverlapping();
 
