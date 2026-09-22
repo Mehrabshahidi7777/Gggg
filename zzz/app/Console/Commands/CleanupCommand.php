@@ -68,10 +68,14 @@ class CleanupCommand extends Command
         | نمی‌زد هم دقیقاً همین‌قدر سکوت بود. یعنی «کار می‌کند» و
         | «هرگز اجرا نشده» از بیرون یک شکل داشتند.
         |
-        | یک خط لاگ این دو را از هم جدا می‌کند: اگر در laravel.log
+        | یک خط لاگ این دو را از هم جدا می‌کند: اگر در cron-tasks.log
         | نباشد، یعنی اجرا نشده.
+        |
+        | ⚠️ کانال cron، نه کانال پیش‌فرض: سطحش ثابت است و به
+        | LOG_LEVEL کاری ندارد. با LOG_LEVEL=error - که در تولید
+        | معمول است - این خط بی‌صدا دور ریخته می‌شد.
         */
-        Log::info('sazmat:cleanup', $summary);
+        Log::channel('cron')->info('sazmat:cleanup', $summary);
 
         $this->info('پاک‌سازی به پایان رسید.');
 

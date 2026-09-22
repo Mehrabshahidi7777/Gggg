@@ -62,10 +62,13 @@ class SendSubscriptionRemindersCommand extends Command
         | یعنی «کار می‌کند» و «هرگز اجرا نشده» از بیرون یک شکل
         | داشتند، و همین باعث شد ماه‌ها کسی متوجه نشود.
         |
-        | حالا اگر این خط در laravel.log نباشد، یعنی اجرا نشده. صفر
-        | بودنِ عددها هم خودش خبر است، نه سکوت.
+        | حالا اگر این خط در cron-tasks.log نباشد، یعنی اجرا نشده.
+        | صفر بودنِ عددها هم خودش خبر است، نه سکوت.
+        |
+        | ⚠️ کانال cron، نه کانال پیش‌فرض: سطحش ثابت است و به
+        | LOG_LEVEL کاری ندارد.
         */
-        Log::info('sazmat:subscription-reminders', $summary);
+        Log::channel('cron')->info('sazmat:subscription-reminders', $summary);
 
         $this->info("مجموع پیامک‌های ارسال‌شده: {$sent}");
 
@@ -144,7 +147,7 @@ class SendSubscriptionRemindersCommand extends Command
                 */
                 if (! $mobile) {
 
-                    Log::warning('subscription reminder skipped: no mobile', [
+                    Log::channel('cron')->warning('subscription reminder skipped: no mobile', [
                         'subscription_id' => $subscription->id,
                         'user_id' => $subscription->user_id,
                         'stage' => $column,
@@ -248,7 +251,7 @@ class SendSubscriptionRemindersCommand extends Command
                     | ستون را علامت نمی‌زنیم تا اجرای فردا دوباره تلاش
                     | کند. یک پیامک ناموفق نباید بقیه‌ی صف را متوقف کند.
                     */
-                    Log::warning('subscription reminder sms failed', [
+                    Log::channel('cron')->warning('subscription reminder sms failed', [
                         'subscription_id' => $subscription->id,
                         'stage' => $column,
                         'exception' => $e->getMessage(),
