@@ -312,6 +312,21 @@
           <ul class="footer-contact">
           <li><span data-icon="mail"></span><span>{{ \App\Models\Setting::get('contact_email','support@sazmat.com') }}</span></li>
           <li><span data-icon="phone"></span><span>09134451542</span></li>
+          {{--
+          | کانال روبیکا
+          |
+          | لوگو جای آیکون می‌نشیند، پس همان ۱۸ پیکسل است تا با mail و
+          | phone بالای خودش هم‌تراز بماند. هم متن و هم لوگو داخل یک
+          | <a> هستند، یعنی تمام سطر قابل کلیک است نه فقط یکی از دو.
+          |
+          | ⚠️ rel="noopener noreferrer" لازم است: با target="_blank"
+          | و بدون آن، صفحه‌ی باز‌شده از راه window.opener به این صفحه
+          | دسترسی دارد.
+          --}}
+          <li><a class="footer-contact__channel" href="https://rubika.ir/sazmat_website" target="_blank" rel="noopener noreferrer">
+          <img src="{{ asset('images/rubika-logo.png') }}" alt="" width="18" height="18" loading="lazy">
+          <span>کانال روبیکا</span>
+          </a></li>
           </ul>
           </div>
           </div>
