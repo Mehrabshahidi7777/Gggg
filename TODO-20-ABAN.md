@@ -50,6 +50,19 @@ sazmat.com
 آماده از قبل: `sitemap.xml`، `robots.txt`، canonical، اجبار https،
 و تگ تأیید گوگل (با `GOOGLE_SITE_VERIFICATION` در `.env`).
 
+**property با www ثبت و نقشه فرستاده شد ✅ (۱۱ مهر)**
+
+- property قدیمی `https://sazmat.com/` (بدون www) در همان حساب گوگل
+  هست؛ پاک نشود ولی دیگر به کار نمی‌آید.
+- property تازه‌ی `https://www.sazmat.com/` با همان فایل
+  `google22e08c388c0e789a.html` خودکار تأیید شد.
+- `sitemap.xml` در property تازه فرستاده شد (وضعیت اول: Unknown).
+- در حساب دیگری (آواتار «m») یک property دامنه‌ی `sazmat.com` تأییدنشده
+  هست؛ بی‌اثر است.
+
+**گام بعد:** ۱-۲ هفته بعد اسکرین‌شات `Indexing → Pages` از property
+با www.
+
 **میزبانِ متعارف: `www.sazmat.com`** ✅ (۱۱ مهر تعیین شد)
 
 `.htaccess` بدونِ www را با ۳۰۱ به www می‌فرستد و `robots.txt` هم
