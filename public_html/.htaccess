@@ -5,6 +5,24 @@
 
     RewriteEngine On
 
+    # یک میزبانِ متعارف: بدونِ www همیشه به www
+    #
+    # ⚠️ بدون این، sazmat.com و www.sazmat.com برای گوگل دو سایت
+    # جدا هستند با محتوای یکسان. اعتبار هر صفحه بین دو آدرس پخش
+    # می‌شود و در سرچ کنسول نیمی از صفحه‌ها «Duplicate» می‌خورند.
+    #
+    # ⚠️ شرط عمداً دقیقاً sazmat.com است، نه «هر چیزی که www ندارد».
+    # این‌طور مقصدِ انتقال هرگز خودش شرط را برآورده نمی‌کند، پس حلقه‌ی
+    # بی‌نهایت ممکن نیست.
+    #
+    # ⚠️ و عمداً فقط www را درست می‌کند، نه http را.
+    # اجبارِ https از روی %{HTTPS} روی هاست‌هایی که SSL را در لایه‌ی
+    # جلویی تمام می‌کنند همیشه «off» می‌بیند و سایت را در حلقه‌ی
+    # انتقال می‌اندازد. آدرس‌هایی که خودِ سایت می‌سازد (sitemap و
+    # canonical) از قبل با URL::forceScheme در لاراول https هستند.
+    RewriteCond %{HTTP_HOST} ^sazmat\.com$ [NC]
+    RewriteRule ^ https://www.sazmat.com%{REQUEST_URI} [L,R=301]
+
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 

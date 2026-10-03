@@ -14,4 +14,8 @@ Disallow: /payments/
 Disallow: /search?
 Disallow: /api/
 
-Sitemap: https://sazmat.com/sitemap.xml
+# ⚠️ با www. میزبانِ متعارف سایت همین است (نوار آدرس مرورگر هم همین
+# را نشان می‌دهد) و این خط باید دقیقاً با آن یکی باشد - وگرنه گوگل
+# بدونِ www را یک سایت دیگر حساب می‌کند و اعتبار بین دو آدرس پخش
+# می‌شود. بدونِ www در .htaccess به همین‌جا منتقل می‌شود.
+Sitemap: https://www.sazmat.com/sitemap.xml

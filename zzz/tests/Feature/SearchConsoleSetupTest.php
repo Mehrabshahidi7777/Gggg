@@ -158,7 +158,12 @@ class SearchConsoleSetupTest extends TestCase
     {
         $robots = file_get_contents(base_path('../public_html/robots.txt'));
 
-        $this->assertStringContainsString('Sitemap: https://sazmat.com/sitemap.xml', $robots);
+        /*
+        | میزبانِ این خط (www یا بدونِ www) در CanonicalHostTest قفل
+        | شده، چون آنجا کنار .htaccess نشسته و این دو باید با هم
+        | عوض شوند. اینجا فقط وجودِ خط مهم است.
+        */
+        $this->assertMatchesRegularExpression('#^Sitemap:\s*https://\S+/sitemap\.xml$#m', $robots);
         $this->assertStringContainsString('Allow: /', $robots);
 
         // «Disallow: /» به‌تنهایی یعنی کل سایت از گوگل حذف شود.
