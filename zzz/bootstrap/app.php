@@ -10,6 +10,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 $app = Application::configure(basePath: dirname(__DIR__))
@@ -62,11 +63,20 @@ $app = Application::configure(basePath: dirname(__DIR__))
 
             $now = now();
 
+            /*
+            | ⚠️ ردِ پا. صاحب سایت به دیتابیس دسترسی ندارد؛ بدون این خط
+            | راهی نیست بفهمد اشتراکی تمام شده و آگهی‌هایش واقعاً تعلیق
+            | شده‌اند. فقط وقتی کاری انجام شده می‌نویسد - این کار ساعتی
+            | است و یک خطِ خالی در هر ساعت لاگ را بی‌مصرف می‌کرد. اینکه
+            | اصلاً اجرا شده را cron.log نشان می‌دهد.
+            */
+            $expired = [];
+
             ServiceSubscription::query()
                 ->where('status', 'active')
                 ->whereNotNull('ends_at')
                 ->where('ends_at', '<=', $now)
-                ->chunkById(100, function ($subscriptions): void {
+                ->chunkById(100, function ($subscriptions) use (&$expired): void {
 
                     foreach ($subscriptions as $subscription) {
 
@@ -78,7 +88,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
                                 ->addMonths(6),
                         ]);
 
-                        Ad::query()
+                        $suspended = Ad::query()
                             ->where('user_id', $subscription->user_id)
                             // این «service» هاردکد بود؛ چون همین جدول اشتراک
                             // حالا هم مال خدمت هم مال محصول است، باید دقیقاً
@@ -95,10 +105,20 @@ $app = Application::configure(basePath: dirname(__DIR__))
                                 */
                                 'suspended_at' => $subscription->ends_at,
                             ]);
+
+                        $expired[$subscription->id] = $suspended;
                     }
                 });
 
-        })->hourly();
+            if ($expired) {
+                Log::channel('cron')->info('sazmat:expire-subscriptions', [
+                    'اشتراک تمام‌شده' => count($expired),
+                    'آگهی تعلیق‌شده' => array_sum($expired),
+                    'شناسه‌ها' => array_keys($expired),
+                ]);
+            }
+
+        })->name('sazmat:expire-subscriptions')->hourly();
 
 
         /*
@@ -118,6 +138,13 @@ $app = Application::configure(basePath: dirname(__DIR__))
 
             $cutoff = now()->subMonths(6);
 
+            /*
+            | ⚠️ این کار آگهی را برای همیشه پاک می‌کند. بدون ردِ پا،
+            | پاک‌شدنِ یک آگهی از بیرون با گم‌شدنش یک شکل است.
+            | فقط وقتی چیزی پاک شده می‌نویسد.
+            */
+            $deletedAds = [];
+
             Ad::query()
                 ->with('images')
                 // قبلاً اینجا where('type','service') هم بود؛ حذف شد چون
@@ -126,7 +153,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
                 ->where('is_suspended', true)
                 ->whereNotNull('suspended_at')
                 ->where('suspended_at', '<=', $cutoff)
-                ->chunkById(100, function ($ads): void {
+                ->chunkById(100, function ($ads) use (&$deletedAds): void {
 
                     foreach ($ads as $ad) {
 
@@ -156,6 +183,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
                         */
 
                         $ad->delete();
+
+                        $deletedAds[] = $ad->id;
                     }
                 });
 
@@ -166,7 +195,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
             |--------------------------------------------------------------------------
             */
 
-            ServiceSubscription::query()
+            $deletedSubscriptions = ServiceSubscription::query()
                 ->whereIn('status', [
                     'expired',
                     'suspended',
@@ -175,7 +204,15 @@ $app = Application::configure(basePath: dirname(__DIR__))
                 ->where('grace_until', '<=', now())
                 ->delete();
 
-        })->hourly();
+            if ($deletedAds || $deletedSubscriptions) {
+                Log::channel('cron')->info('sazmat:purge-suspended', [
+                    'آگهی پاک‌شده' => count($deletedAds),
+                    'شناسه‌ی آگهی‌ها' => $deletedAds,
+                    'اشتراک پاک‌شده' => $deletedSubscriptions,
+                ]);
+            }
+
+        })->name('sazmat:purge-suspended')->hourly();
 
 
         /*
