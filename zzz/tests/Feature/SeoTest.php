@@ -115,6 +115,104 @@ class SeoTest extends TestCase
 
     /*
     |--------------------------------------------------------------------------
+    | ...ولی دسته استثناست
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ این تست از یک تناقض واقعی بین نقشه‌ی سایت و خودِ صفحه آمده.
+    |
+    | نقشه‌ی سایت آدرس هر دسته را جداگانه به گوگل می‌دهد
+    | (/products?category=5)، ولی canonical همان صفحه آدرسِ بی‌فیلتر
+    | بود. یعنی نقشه می‌گفت «این را ببین» و صفحه می‌گفت «نه، من
+    | تکراری‌ام».
+    |
+    | در سرچ کنسول نتیجه‌اش این است که همه‌ی صفحه‌های دسته زیر عنوان
+    | «Alternate page with proper canonical tag» کنار گذاشته می‌شوند.
+    | یعنی کل دسته‌بندی‌ها از گوگل بیرون می‌مانند - بی‌آنکه هیچ خطایی
+    | جایی دیده شود.
+    */
+    public function test_a_category_page_points_at_itself(): void
+    {
+        $ad = $this->makeAd('سیمان تیپ ۲');
+
+        $html = $this->get('/products?category=' . $ad->category_id . '&page=2&sort=new')
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString(
+            '<link rel="canonical" href="' . route('products', ['category' => $ad->category_id]) . '">',
+            $html,
+            'صفحه‌ی دسته باید خودش را canonical معرفی کند، وگرنه از نتایج گوگل بیرون می‌ماند.'
+        );
+    }
+
+    /*
+    | و همان آدرسی باشد که در نقشه‌ی سایت آمده - نه یک شکلِ دیگرش.
+    |
+    | اگر این دو کوچک‌ترین فرقی داشته باشند (مثلاً یکی اسلاگ بدهد و
+    | آن یکی شناسه)، گوگل باز هم آنها را دو صفحه می‌بیند و همان
+    | مشکلِ اول برمی‌گردد.
+    */
+    public function test_the_sitemap_and_the_canonical_agree(): void
+    {
+        $ad = $this->makeAd('سیمان تیپ ۲');
+
+        $xml = simplexml_load_string($this->get('/sitemap.xml')->assertOk()->getContent());
+
+        $locations = [];
+        foreach ($xml->url as $url) {
+            $locations[] = (string) $url->loc;
+        }
+
+        $categoryUrl = route('products', ['category' => $ad->category_id]);
+
+        $this->assertContains($categoryUrl, $locations, 'آدرس دسته در نقشه‌ی سایت نیست.');
+
+        $html = $this->get($categoryUrl)->assertOk()->getContent();
+
+        $this->assertStringContainsString(
+            '<link rel="canonical" href="' . $categoryUrl . '">',
+            $html,
+            'آدرسی که در نقشه هست باید خودش را canonical معرفی کند.'
+        );
+    }
+
+    /*
+    | و شناسه‌ی بی‌معنا نباید آدرس بسازد.
+    |
+    | با ?category=999 صفحه خالی برمی‌گردد؛ اگر همان را canonical
+    | کنیم، به گوگل یک آدرسِ بی‌ارزش معرفی کرده‌ایم که خودمان هرگز
+    | جایی لینکش نداده‌ایم.
+    */
+    public function test_an_unknown_category_falls_back_to_the_plain_listing(): void
+    {
+        $html = $this->get('/products?category=999999')->assertOk()->getContent();
+
+        $this->assertStringContainsString(
+            '<link rel="canonical" href="' . route('products') . '">',
+            $html
+        );
+    }
+
+    /*
+    | و دسته‌ی خدمات روی صفحه‌ی محصولات هم همین‌طور - آنجا هم
+    | نتیجه خالی است.
+    */
+    public function test_a_category_of_the_other_type_does_not_become_canonical(): void
+    {
+        $service = $this->makeAd('نقاشی ساختمان', 'service');
+
+        $html = $this->get('/products?category=' . $service->category_id)
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString(
+            '<link rel="canonical" href="' . route('products') . '">',
+            $html
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | داده‌ی ساخت‌یافته
     |--------------------------------------------------------------------------
     */
