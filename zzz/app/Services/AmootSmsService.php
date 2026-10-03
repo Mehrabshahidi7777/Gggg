@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class AmootSmsService
@@ -65,9 +66,58 @@ class AmootSmsService
     {
         $pattern = (int) config('services.amoot.pattern_renewal_id');
 
-        if ($pattern) {
-            $this->sendWithPattern($mobile, $pattern, $this->joinValues($patternValues));
+        /*
+        | پیش از هر چیز، تنظیمات. بدون این، نبودِ توکن همان
+        | RuntimeException را می‌دهد که پایین‌تر «پترن رد شد» تفسیر
+        | می‌شود - و یک خط لاگِ گمراه‌کننده می‌سازد.
+        */
+        $this->credentials();
+
+        if (! $pattern) {
+            $this->sendText($mobile, $message);
+
             return;
+        }
+
+        /*
+        |----------------------------------------------------------------------
+        | اگر آموت پترن را نپذیرفت، متن ساده
+        |----------------------------------------------------------------------
+        |
+        | ⚠️ یک پترن بین ساخته‌شدن و تأییدشدن، چند روز در حالت «در
+        | انتظار بررسی» می‌ماند. در آن مدت شناسه‌اش وجود دارد ولی
+        | ارسال با آن رد می‌شود.
+        |
+        | قبلاً نتیجه‌ی این حالت «هیچ پیامکی» بود: شناسه ست بود، پس
+        | متن ساده هم امتحان نمی‌شد. یعنی گذاشتنِ شناسه در .env پیش
+        | از تأیید، یادآوری‌ها را تا روز تأیید خاموش می‌کرد.
+        |
+        | حالا متن ساده پشتوانه است. روی خط خدماتی متن آزاد مجاز
+        | است، پس پیامک می‌رسد - فقط بدون قالبِ پترن.
+        |
+        | ⚠️ و فقط وقتی که آموت *جواب داده و رد کرده* - نه وقتی
+        | ارتباط قطع شده.
+        |
+        | تفاوتش مهم است: پاسخِ رد یعنی مطمئنیم چیزی نرفته، پس ارسال
+        | دوباره بی‌خطر است. ولی قطعیِ ارتباط یا تایم‌اوت یعنی
+        | نمی‌دانیم درخواست رسیده یا نه؛ آنجا تلاش دوباره می‌تواند
+        | دو پیامک بفرستد. پس ConnectionException رد می‌شود و بالا
+        | می‌رود تا دستور فردا دوباره امتحان کند.
+        |
+        | خطا در لاگ می‌نشیند، وگرنه یک پترنِ همیشه‌خراب بی‌صدا پشت
+        | متن ساده پنهان می‌ماند.
+        */
+        try {
+            $this->sendWithPattern($mobile, $pattern, $this->joinValues($patternValues));
+
+            return;
+
+        } catch (RuntimeException $e) {
+
+            Log::channel('cron')->warning('amoot pattern rejected, falling back to plain text', [
+                'pattern' => $pattern,
+                'exception' => $e->getMessage(),
+            ]);
         }
 
         $this->sendText($mobile, $message);

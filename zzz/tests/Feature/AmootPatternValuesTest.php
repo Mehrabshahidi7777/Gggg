@@ -126,6 +126,9 @@ class AmootPatternValuesTest extends TestCase
     | آموت گاهی با کد ۲۰۰ ولی Status=false جواب می‌دهد. اگر این را
     | قبول کنیم، کرون ستون _sent_at را پر می‌کند و آن پیامک دیگر
     | هرگز فرستاده نمی‌شود.
+    |
+    | حالا که متن ساده پشتوانه‌ی پترن است، شکستِ واقعی یعنی هر دو
+    | شکست بخورند.
     */
     public function test_a_two_hundred_with_status_false_is_still_a_failure(): void
     {
@@ -138,5 +141,100 @@ class AmootPatternValuesTest extends TestCase
         $this->expectException(\RuntimeException::class);
 
         app(AmootSmsService::class)->sendRenewalReminder('09121234567', 'متن', ['مهراب']);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | پترنِ تأییدنشده نباید یادآوری را خاموش کند
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ این از یک وضعیت واقعی آمده: مهراب پترن را ساخت و شناسه‌اش را
+    | همان روز در .env گذاشت، در حالی که آموت هنوز تأییدش نکرده بود.
+    |
+    | قبلاً نتیجه‌اش «هیچ پیامکی» بود - چون شناسه ست بود، متن ساده
+    | اصلاً امتحان نمی‌شد. یعنی گذاشتن شناسه پیش از تأیید،
+    | یادآوری‌ها را تا روز تأیید بی‌صدا خاموش می‌کرد.
+    */
+    public function test_a_rejected_pattern_falls_back_to_plain_text(): void
+    {
+        Http::fake([
+            '*SendWithPatternOWN' => Http::response(['Status' => false], 200),
+            '*SendSimple' => Http::response(['Status' => 'Success'], 200),
+        ]);
+
+        config(['services.amoot.pattern_renewal_id' => 55]);
+
+        app(AmootSmsService::class)
+            ->sendRenewalReminder('09121234567', 'اشتراک خدمات شما فردا تمام می‌شود', ['خدمات', 'فردا تمام می‌شود']);
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'SendSimple')
+            && $request['Message'] === 'اشتراک خدمات شما فردا تمام می‌شود'
+            && $request['Mobile'] === '09121234567');
+    }
+
+    /*
+    | و وقتی پترن کار می‌کند، متن ساده نباید هم برود - وگرنه کاربر
+    | دو پیامک می‌گیرد و هزینه دو برابر می‌شود.
+    */
+    public function test_a_working_pattern_does_not_also_send_plain_text(): void
+    {
+        Http::fake([
+            'portal.amootsms.com/*' => Http::response(['Status' => 'Success'], 200),
+        ]);
+
+        config(['services.amoot.pattern_renewal_id' => 55]);
+
+        app(AmootSmsService::class)->sendRenewalReminder('09121234567', 'متن', ['خدمات', 'فردا']);
+
+        Http::assertSentCount(1);
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'SendSimple'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ⚠️ ولی قطعیِ ارتباط پشتوانه ندارد
+    |--------------------------------------------------------------------------
+    |
+    | پاسخِ رد یعنی مطمئنیم چیزی نرفته، پس ارسال دوباره بی‌خطر است.
+    | ولی تایم‌اوت یعنی نمی‌دانیم درخواست به آموت رسیده یا نه - شاید
+    | پیامک رفته و فقط پاسخش گم شده.
+    |
+    | اگر آنجا هم متن ساده بفرستیم، کاربر دو پیامک می‌گیرد. پس خطا
+    | بالا می‌رود و دستور فردا دوباره امتحان می‌کند (ستون _sent_at
+    | علامت نمی‌خورد).
+    */
+    public function test_a_timeout_does_not_trigger_a_second_message(): void
+    {
+        Http::fake(function () {
+            throw new \Illuminate\Http\Client\ConnectionException('timed out');
+        });
+
+        config(['services.amoot.pattern_renewal_id' => 55]);
+
+        try {
+            app(AmootSmsService::class)->sendRenewalReminder('09121234567', 'متن', ['خدمات', 'فردا']);
+            $this->fail('خطای قطعیِ ارتباط باید بالا می‌رفت.');
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // همین درست است.
+        }
+
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'SendSimple'));
+    }
+
+    /*
+    | و بدون شناسه، همان رفتار قبلی: مستقیم متن ساده.
+    */
+    public function test_an_empty_pattern_id_still_sends_plain_text(): void
+    {
+        Http::fake([
+            'portal.amootsms.com/*' => Http::response(['Status' => 'Success'], 200),
+        ]);
+
+        config(['services.amoot.pattern_renewal_id' => null]);
+
+        app(AmootSmsService::class)->sendRenewalReminder('09121234567', 'متن پشتیبان', ['خدمات', 'فردا']);
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'SendSimple')
+            && $request['Message'] === 'متن پشتیبان');
     }
 }
