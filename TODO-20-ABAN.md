@@ -60,8 +60,8 @@ sazmat.com
 - در حساب دیگری (آواتار «m») یک property دامنه‌ی `sazmat.com` تأییدنشده
   هست؛ بی‌اثر است.
 
-**گام بعد:** ۱-۲ هفته بعد اسکرین‌شات `Indexing → Pages` از property
-با www.
+**گام بعد:** ۲۲ آبان، همراه با `cron-tasks.log`، اسکرین‌شات
+`Indexing → Pages` و `Sitemaps` از property با www.
 
 **میزبانِ متعارف: `www.sazmat.com`** ✅ (۱۱ مهر تعیین شد)
 
