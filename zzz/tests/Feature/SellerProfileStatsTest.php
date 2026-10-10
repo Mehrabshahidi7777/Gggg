@@ -101,7 +101,7 @@ class SellerProfileStatsTest extends TestCase
 
     /*
     |--------------------------------------------------------------------------
-    | «نفر شماره را دیده‌اند»
+    | «شمار افراد دیده‌شده» (چند نفر شماره را دیده‌اند)
     |--------------------------------------------------------------------------
     |
     | ⚠️ آدم، نه دفعه. جدول برای هر کاربر روزی یک ردیف نگه می‌دارد؛
@@ -129,7 +129,7 @@ class SellerProfileStatsTest extends TestCase
         $html = $this->page($seller);
 
         $this->assertMatchesRegularExpression(
-            '#<strong>3</strong><span>نفر شماره را دیده‌اند</span>#u',
+            '#<strong>3</strong><span>شمار افراد دیده‌شده</span>#u',
             $html,
             'باید سه نفر باشد: الف، ب، و ردیف قدیمیِ بی‌حساب.'
         );
@@ -146,7 +146,7 @@ class SellerProfileStatsTest extends TestCase
 
         $this->reveal($otherAd, $this->user('09120000002'), '2026-10-01');
 
-        $this->assertStringNotContainsString('نفر شماره را دیده‌اند', $this->page($seller));
+        $this->assertStringNotContainsString('شمار افراد دیده‌شده', $this->page($seller));
     }
 
     /*
@@ -160,7 +160,7 @@ class SellerProfileStatsTest extends TestCase
 
         $html = $this->page($seller);
 
-        $this->assertStringNotContainsString('نفر شماره را دیده‌اند', $html);
+        $this->assertStringNotContainsString('شمار افراد دیده‌شده', $html);
         $this->assertStringContainsString('آگهی فعال', $html);
     }
 }

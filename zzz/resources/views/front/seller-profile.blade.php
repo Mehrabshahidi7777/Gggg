@@ -11,7 +11,7 @@
             «کسی سراغ این فروشنده نرفته» - که برای فروشنده‌ی تازه‌وارد
             منصفانه نیست. چرایش در SellerProfileController.
         --}}
-        <div class="seller-stats">@if($salesCount !== null)<div><strong>{{ $salesCount }}</strong><span>قلم تکمیل‌شده</span></div>@endif @if($contactViewers > 0)<div><strong>{{ $contactViewers }}</strong><span>نفر شماره را دیده‌اند</span></div>@endif<div><strong>{{ $user->ads()->approved()->count() }}</strong><span>آگهی فعال</span></div></div>
+        <div class="seller-stats">@if($salesCount !== null)<div><strong>{{ $salesCount }}</strong><span>قلم تکمیل‌شده</span></div>@endif @if($contactViewers > 0)<div><strong>{{ $contactViewers }}</strong><span>شمار افراد دیده‌شده</span></div>@endif<div><strong>{{ $user->ads()->approved()->count() }}</strong><span>آگهی فعال</span></div></div>
     </div>
 
     @if($products->count())<section class="section--tight" style="padding-bottom:30px;"><div class="section-head"><h2>محصولات فروشنده</h2></div><div class="sz-grid sz-grid-4">@foreach($products as $ad)<x-ad-card :ad="$ad"/>@endforeach</div><div style="margin-top:20px;">{{ $products->links() }}</div></section>@endif
